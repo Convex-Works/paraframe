@@ -1,0 +1,61 @@
+/*
+  paraframe's chrome. Import it once in the layout of the canvas and player
+  routes, not in the frame route: frames carry the host app's own styles.
+
+  Override the --pf-* custom properties to theme the chrome.
+*/
+@import 'tailwindcss' source(none);
+@source './';
+
+:root {
+	--pf-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--pf-ink: #1c1d21;
+	--pf-muted: #6b6f78;
+	--pf-line: #dfe1e5;
+	--pf-wash: #f1f2f4;
+	--pf-canvas: #e5e6e9;
+	--pf-section: rgb(255 255 255 / 0.42);
+	--pf-grid: rgb(28 29 33 / 0.1);
+	--pf-stage: #2a2b2f;
+	--pf-accent: #3a6ff0;
+}
+
+@theme inline {
+	--font-pf: var(--pf-font);
+	--color-pf-ink: var(--pf-ink);
+	--color-pf-muted: var(--pf-muted);
+	--color-pf-line: var(--pf-line);
+	--color-pf-wash: var(--pf-wash);
+	--color-pf-canvas: var(--pf-canvas);
+	--color-pf-section: var(--pf-section);
+	--color-pf-stage: var(--pf-stage);
+	--color-pf-accent: var(--pf-accent);
+}
+
+@layer components {
+	.pf-tool,
+	.pf-tool-light {
+		display: inline-flex;
+		height: 2rem;
+		min-width: 2rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.375rem;
+		outline: none;
+	}
+	.pf-tool:hover,
+	.pf-tool[aria-expanded='true'] {
+		background: rgb(255 255 255 / 0.1);
+	}
+	.pf-tool:disabled {
+		opacity: 0.35;
+		pointer-events: none;
+	}
+	.pf-tool-light:hover {
+		background: var(--pf-wash);
+	}
+	.pf-tool:focus-visible,
+	.pf-tool-light:focus-visible {
+		box-shadow: 0 0 0 2px var(--pf-accent);
+	}
+}
