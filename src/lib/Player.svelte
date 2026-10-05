@@ -99,13 +99,13 @@
 	}
 
 	function restart() {
-		show(flow?.start ?? frame?.section.frames[0]?.id);
+		if (flow) show(flow.start);
 	}
 
 	function handleKey(key: string) {
 		if (key === 'ArrowRight') show(prototype.next(frameId)?.id);
 		else if (key === 'ArrowLeft') show(prototype.prev(frameId)?.id);
-		else if (key === 'r' || key === 'R') restart();
+		else if ((key === 'r' || key === 'R') && flow) restart();
 	}
 
 	function onkeydown(event: KeyboardEvent) {
@@ -157,12 +157,13 @@
 			>
 				<Icon name="canvas" />
 			</a>
-			<div class="flex min-w-0 items-baseline gap-2 pl-1">
-				<span class="truncate font-medium text-white">{frame?.title ?? frameId}</span>
+			<p class="flex min-w-0 items-baseline gap-1.5 pl-1">
 				{#if frame}
-					<span class="truncate text-white/50">{frame.section.title}</span>
+					<span class="shrink-0 text-white/50">{frame.section.title}</span>
+					<span class="text-white/30" aria-hidden="true">/</span>
 				{/if}
-			</div>
+				<span class="truncate font-medium text-white">{frame?.title ?? frameId}</span>
+			</p>
 		</div>
 
 		<nav class="flex items-center gap-1" aria-label="Step through frames">
@@ -215,15 +216,17 @@
 				</Menu>
 			{/if}
 
-			<button
-				type="button"
-				class="pf-tool"
-				onclick={restart}
-				title={flow ? `Restart “${flow.title}” (R)` : 'Back to the first frame in this section (R)'}
-				aria-label="Restart"
-			>
-				<Icon name="restart" />
-			</button>
+			{#if flow}
+				<button
+					type="button"
+					class="pf-tool"
+					onclick={restart}
+					title="Restart “{flow.title}” (R)"
+					aria-label="Restart “{flow.title}”"
+				>
+					<Icon name="restart" />
+				</button>
+			{/if}
 
 			<Menu label="Jump to a frame" tone="dark" align="end" class="pf-tool gap-1.5 px-2.5">
 				{#snippet trigger()}

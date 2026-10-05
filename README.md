@@ -5,7 +5,8 @@ preview. You write each frame as a Svelte component. paraframe adds two
 views around them:
 
 - **Canvas.** Every frame laid out in sections on a board you can pan and
-  zoom. Double-click a frame to play it.
+  zoom. Frames where a flow starts carry a tag that plays the flow.
+  Double-click a frame to play it.
 - **Player.** One frame at a time, scaled to the window. Links inside frames
   move between frames. Arrow keys step through frames in reading order, and
   named flows give you starting points.
@@ -102,7 +103,7 @@ clicks inside the frame (a selectable table row, say), add
 
 | View | Keys |
 | --- | --- |
-| Player | ← → previous and next frame, R restart the flow |
+| Player | ← → previous and next frame, R restart the flow (while one is playing) |
 | Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, ⇧2 zoom to selection, ← → select previous and next frame, Enter play |
 
 ## Theming

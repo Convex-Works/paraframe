@@ -12,7 +12,7 @@
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable } from './messages.js';
-	import type { Frame, Prototype, Section } from './types.js';
+	import type { Flow, Frame, Prototype, Section } from './types.js';
 
 	let { prototype }: { prototype: Prototype } = $props();
 
@@ -64,7 +64,8 @@
 	const keys = $derived({
 		camera: storageKey(prototype.title, 'camera'),
 		selected: storageKey(prototype.title, 'selected'),
-		last: storageKey(prototype.title, 'last')
+		last: storageKey(prototype.title, 'last'),
+		flow: storageKey(prototype.title, 'flow')
 	});
 
 	let viewport = $state<HTMLDivElement>();
@@ -144,10 +145,22 @@
 		persist();
 	}
 
-	function play(id: string | undefined) {
+	function play(id: string | undefined, flow?: Flow) {
 		const frame = (id && prototype.get(id)) || prototype.frames[0];
-		if (frame) goto(prototype.paths.play(frame.id));
+		if (!frame) return;
+		// The player shows the active flow; playing a single frame leaves any flow.
+		writeStored('session', keys.flow, flow?.id ?? null);
+		goto(prototype.paths.play(frame.id));
 	}
+
+	const startFlow = (flow: Flow) => play(flow.start, flow);
+
+	// Flows that start on each frame, to mark starting points on the canvas.
+	const flowsByStart = $derived.by(() => {
+		const map = new Map<string, Flow[]>();
+		for (const flow of prototype.flows) map.set(flow.start, [...(map.get(flow.start) ?? []), flow]);
+		return map;
+	});
 
 	function hit(event: MouseEvent): Frame | undefined {
 		if (!viewport) return undefined;
@@ -305,7 +318,7 @@
 						<MenuItem
 							onselect={() => {
 								close();
-								play(flow.start);
+								startFlow(flow);
 							}}
 							hint={prototype.get(flow.start)?.title}
 						>
@@ -429,12 +442,12 @@
 							class="absolute flex items-center gap-1"
 							style:left="{s.left}px"
 							style:top="{s.top - 21}px"
-							style:max-width="{s.width}px"
+							style:max-width="{s.width + FRAME_GAP * camera.z - 8}px"
 						>
 							<button
 								type="button"
 								class={[
-									'truncate rounded px-1 text-xs',
+									'min-w-0 truncate rounded px-1 text-xs',
 									frame.id === selected ? 'text-pf-accent' : 'text-pf-muted hover:text-pf-ink'
 								]}
 								onclick={() => select(frame.id)}
@@ -453,6 +466,28 @@
 									<Icon name="play" size={12} />
 								</button>
 							{/if}
+						</div>
+					{/if}
+					{#if flowsByStart.has(frame.id) && s.width >= MIN_LABEL_WIDTH}
+						<!-- Flow starting points, pinned to the frame's top-left corner. -->
+						<div
+							data-pf-ui
+							class="absolute z-10 flex flex-col items-start gap-1"
+							style:left="{s.left + 6}px"
+							style:top="{s.top + 6}px"
+							style:max-width="{s.width - 12}px"
+						>
+							{#each flowsByStart.get(frame.id) ?? [] as flow (flow.id)}
+								<button
+									type="button"
+									class="inline-flex h-5 max-w-full items-center gap-1 rounded-full bg-pf-accent pr-2 pl-1.5 text-[11px] font-medium text-white shadow-sm hover:brightness-110"
+									onclick={() => startFlow(flow)}
+									title="Play the flow “{flow.title}”"
+								>
+									<Icon name="play" size={10} />
+									<span class="truncate">{flow.title}</span>
+								</button>
+							{/each}
 						</div>
 					{/if}
 					{#if frame.id === selected || (frame.id === hovered && !panning)}
