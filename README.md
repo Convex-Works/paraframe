@@ -75,6 +75,32 @@ src/routes/
 `src/routes` and `src/demo` in this package are a complete working example.
 Run `pnpm showcase` to open it.
 
+### Static canvas previews
+
+Pass an optional `preview` function to use images at overview scale, switching
+nearby frames to live iframes when zooming beyond the image's resolution.
+Selection, navigation and the interactive player work the same way:
+
+```svelte
+<Canvas {prototype} preview={(frame) => `/previews/${frame.id}.png`} />
+```
+
+The host app supplies the images, for example by capturing each frame route in a
+headless browser during its build. Use each frame's `size` as the capture viewport.
+`FrameHost` sets `document.documentElement.dataset.pfFrameReady` to the frame ID
+after hydration and font loading; a capture should also wait for its images and
+any application-specific asynchronous content. Omit `preview` in development
+to keep live frame updates.
+
+The canvas compares the image's natural dimensions with the frame's CSS size,
+canvas zoom, device-pixel ratio and native pinch zoom. Supply direct image URLs
+at any capture resolution; 2× screenshots automatically switch at twice the zoom
+of 1× screenshots. Live frames load only within 96 CSS pixels of the viewport.
+They fade over their thumbnail after load and the frame's ready message, return
+to images 15% below the switch point, and are destroyed after fading out. This
+hysteresis avoids reloading around the boundary. Failed live loads leave the
+thumbnail visible; failed thumbnails fall back to a live frame.
+
 ## Linking frames
 
 Inside a frame:

@@ -6,15 +6,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { devicePixelRatio } from 'svelte/reactivity/window';
 	import { goto } from '$app/navigation';
 	import Icon from './internal/Icon.svelte';
+	import CanvasPreview from './internal/CanvasPreview.svelte';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable } from './messages.js';
 	import type { Flow, Frame, Prototype, Section } from './types.js';
 
-	let { prototype }: { prototype: Prototype } = $props();
+	let {
+		prototype,
+		preview
+	}: {
+		prototype: Prototype;
+		/** Screenshot URL; visible frames become live when zoom exceeds its pixel density. */
+		preview?: (frame: Frame) => string;
+	} = $props();
 
 	// Canvas units are CSS pixels at 100% zoom.
 	const FRAME_GAP = 160;
@@ -76,8 +85,27 @@
 	let selected = $state<string | undefined>();
 	let hovered = $state<string | undefined>();
 	let panning = $state(false);
+	let pageScale = $state(1);
+	const pixelScale = $derived(camera.z * (devicePixelRatio.current ?? 1) * pageScale);
 
-	// Frames load once they first come near the viewport, then stay loaded.
+	onMount(() => {
+		// Pinch zoom magnifies the visual viewport without changing devicePixelRatio.
+		const visual = window.visualViewport;
+		const update = () => { pageScale = visual?.scale ?? 1; };
+		update();
+		visual?.addEventListener('resize', update);
+		return () => visual?.removeEventListener('resize', update);
+	});
+
+	function nearViewport(b: Box) {
+		const margin = 96;
+		const left = b.x * camera.z + camera.x;
+		const top = b.y * camera.z + camera.y;
+		return left < width + margin && left + b.w * camera.z > -margin
+			&& top < height + margin && top + b.h * camera.z > -margin;
+	}
+
+	// Keep thumbnails (or dev iframes) once seen; production live frames are culled separately.
 	const seen = new SvelteSet<string>();
 
 	$effect(() => {
@@ -406,13 +434,23 @@
 						style:height="{b.h}px"
 					>
 						{#if seen.has(frame.id)}
-							<iframe
-								data-pf-canvas
-								src={prototype.paths.frame(frame.id)}
-								title={frame.title}
-								tabindex="-1"
-								class="pointer-events-none size-full border-0"
-							></iframe>
+							{#if preview}
+								<CanvasPreview
+									{frame}
+									src={prototype.paths.frame(frame.id)}
+									preview={preview(frame)}
+									{pixelScale}
+									nearViewport={nearViewport(b)}
+								/>
+							{:else}
+								<iframe
+									data-pf-canvas
+									src={prototype.paths.frame(frame.id)}
+									title={frame.title}
+									tabindex="-1"
+									class="pointer-events-none size-full border-0"
+								></iframe>
+							{/if}
 						{/if}
 					</div>
 				{/if}

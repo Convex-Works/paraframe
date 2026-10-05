@@ -97,8 +97,22 @@
 			: host?.hasAttribute('data-pf-canvas')
 				? 'canvas'
 				: 'standalone';
-		document.fonts.ready.then(() => postToHost({ type: 'paraframe:ready', frame: frame.id }));
 		return () => clearTimeout(hintTimer);
+	});
+
+	$effect(() => {
+		const id = frame.id;
+		let cancelled = false;
+		document.fonts.ready.then(() => {
+			if (cancelled) return;
+			// Build-time captures can distinguish a hydrated frame from its initial HTML.
+			document.documentElement.dataset.pfFrameReady = id;
+			postToHost({ type: 'paraframe:ready', frame: id });
+		});
+		return () => {
+			cancelled = true;
+			delete document.documentElement.dataset.pfFrameReady;
+		};
 	});
 </script>
 
