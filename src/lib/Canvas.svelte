@@ -148,7 +148,8 @@
 
 	function fitSelection() {
 		const box = selected && layout.frames.get(selected);
-		if (box) fit(box, 40);
+		// Keep the frame and its title below the floating toolbar while centering it.
+		if (box) fit(box, 72);
 	}
 
 	const zoomActions = [
@@ -156,7 +157,7 @@
 		{ label: 'Zoom out', hint: '−', run: () => zoomAt(0.8) },
 		{ label: 'Zoom to fit', hint: '⇧1', run: () => fit(layout.bounds) },
 		{ label: 'Zoom to 100%', hint: '⇧0', run: () => zoomTo(1) },
-		{ label: 'Zoom to selection', hint: '⇧2', run: () => fitSelection() }
+		{ label: 'Focus selection', hint: 'F / ⇧2', run: fitSelection }
 	];
 
 	let persistTimer: ReturnType<typeof setTimeout> | undefined;
@@ -273,6 +274,7 @@
 			'shift+Digit1': () => fit(layout.bounds),
 			'shift+Digit0': () => zoomTo(1),
 			'shift+Digit2': fitSelection,
+			KeyF: fitSelection,
 			Equal: () => zoomAt(1.25),
 			NumpadAdd: () => zoomAt(1.25),
 			Minus: () => zoomAt(0.8),
@@ -326,69 +328,74 @@
 
 <svelte:window {onkeydown} />
 
-<div class="pf-root flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-ink">
-	<header class="flex h-12 shrink-0 items-center gap-3 border-b border-pf-line bg-white px-4">
-		<div class="flex min-w-0 flex-1 items-baseline gap-3">
-			<h1 class="truncate text-sm font-semibold">{prototype.title}</h1>
-			{#if prototype.description}
-				<p class="truncate text-pf-muted">{prototype.description}</p>
-			{/if}
+<div class="pf-root relative flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-canvas-ink">
+	<header class="pf-toolbar absolute inset-x-3 top-3 z-20">
+		<div class="pf-island gap-2 px-2.5">
+			<Icon name="canvas" size={16} />
+			<div class="min-w-0">
+				<h1 class="truncate text-sm font-semibold leading-7">{prototype.title}</h1>
+				{#if prototype.description}
+					<p class="truncate text-xs text-pf-muted">{prototype.description}</p>
+				{/if}
+			</div>
 		</div>
 
-		{#if prototype.flows.length}
-			<Menu label="Play a flow" align="end" class="pf-tool-light gap-1.5 px-2.5">
+		<nav class="pf-island ml-auto shrink-0" aria-label="Canvas controls">
+			{#if prototype.flows.length}
+				<Menu label="Play a flow" align="end" class="pf-tool gap-1.5 px-2">
+					{#snippet trigger()}
+						<span>Flows</span>
+						<Icon name="chevron-down" size={14} />
+					{/snippet}
+					{#snippet children(close)}
+						{#each prototype.flows as flow (flow.id)}
+							<MenuItem
+								onselect={() => {
+									close();
+									startFlow(flow);
+								}}
+								hint={prototype.get(flow.start)?.title}
+							>
+								{flow.title}
+							</MenuItem>
+						{/each}
+					{/snippet}
+				</Menu>
+			{/if}
+
+			<Menu label="Zoom" align="end" class="pf-tool w-18 justify-between gap-1.5 px-2">
 				{#snippet trigger()}
-					<span>Flows</span>
+					<span class="tabular-nums">{Math.round(camera.z * 100)}%</span>
 					<Icon name="chevron-down" size={14} />
 				{/snippet}
 				{#snippet children(close)}
-					{#each prototype.flows as flow (flow.id)}
+					{#each zoomActions as entry (entry.label)}
 						<MenuItem
+							hint={entry.hint}
 							onselect={() => {
 								close();
-								startFlow(flow);
+								entry.run();
 							}}
-							hint={prototype.get(flow.start)?.title}
 						>
-							{flow.title}
+							{entry.label}
 						</MenuItem>
 					{/each}
+					<p class="max-w-60 border-t border-pf-line px-2 pt-2 pb-1 text-xs leading-relaxed text-pf-muted">
+						Scroll or drag to pan. Hold ⌘ or Ctrl and scroll to zoom. Double-click a frame to play it.
+					</p>
 				{/snippet}
 			</Menu>
-		{/if}
 
-		<Menu label="Zoom" align="end" class="pf-tool-light w-20 justify-between gap-1.5 px-2.5">
-			{#snippet trigger()}
-				<span class="tabular-nums">{Math.round(camera.z * 100)}%</span>
-				<Icon name="chevron-down" size={14} />
-			{/snippet}
-			{#snippet children(close)}
-				{#each zoomActions as entry (entry.label)}
-					<MenuItem
-						hint={entry.hint}
-						onselect={() => {
-							close();
-							entry.run();
-						}}
-					>
-						{entry.label}
-					</MenuItem>
-				{/each}
-				<p class="max-w-60 border-t border-pf-line px-2 pt-2 pb-1 text-xs leading-relaxed text-pf-muted">
-					Scroll or drag to pan. Hold ⌘ or Ctrl and scroll to zoom. Double-click a frame to play it.
-				</p>
-			{/snippet}
-		</Menu>
-
-		<button
-			type="button"
-			class="inline-flex h-8 items-center gap-1.5 rounded-md bg-pf-accent px-3 font-medium text-white hover:brightness-110"
-			onclick={() => play(selected)}
-			title={selectedFrame ? `Play from “${selectedFrame.title}”` : 'Play from the first frame'}
-		>
-			<Icon name="play" size={14} />
-			Play
-		</button>
+			<button
+				type="button"
+				class="inline-flex h-7 items-center gap-1.5 rounded-[2px] bg-pf-accent px-2.5 font-medium text-pf-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pf-accent"
+				onclick={() => play(selected)}
+				title={selectedFrame ? `Play from “${selectedFrame.title}”` : 'Play from the first frame'}
+			>
+				<Icon name="play" size={14} />
+				Play
+			</button>
+		</nav>
 	</header>
 
 	<div
@@ -416,7 +423,7 @@
 		>
 			{#each layout.sections as { section, box } (section.id)}
 				<div
-					class="absolute rounded-[48px] bg-pf-section"
+					class="absolute rounded-[16px] bg-pf-section"
 					style:left="{box.x}px"
 					style:top="{box.y}px"
 					style:width="{box.w}px"
@@ -427,7 +434,7 @@
 				{@const b = layout.frames.get(frame.id)}
 				{#if b}
 					<div
-						class="absolute overflow-hidden bg-white shadow-[0_2px_24px_rgb(15_23_42/0.12)]"
+						class="absolute overflow-hidden bg-white"
 						style:left="{b.x}px"
 						style:top="{b.y}px"
 						style:width="{b.w}px"
@@ -461,7 +468,7 @@
 			{#each layout.sections as { section, box } (section.id)}
 				{@const s = screen(box)}
 				<p
-					class="pointer-events-none absolute truncate text-sm font-semibold text-pf-ink/80"
+					class="pointer-events-none absolute truncate text-sm font-semibold text-pf-canvas-ink"
 					style:left="{s.left + 4}px"
 					style:top="{s.top - 26}px"
 					style:max-width="{Math.max(s.width, 160)}px"
@@ -486,7 +493,7 @@
 								type="button"
 								class={[
 									'min-w-0 truncate rounded px-1 text-xs',
-									frame.id === selected ? 'text-pf-accent' : 'text-pf-muted hover:text-pf-ink'
+									frame.id === selected ? 'text-pf-selection' : 'text-pf-canvas-muted hover:text-pf-canvas-ink'
 								]}
 								onclick={() => select(frame.id)}
 								ondblclick={() => play(frame.id)}
@@ -496,7 +503,7 @@
 							{#if frame.id === selected || frame.id === hovered}
 								<button
 									type="button"
-									class="shrink-0 rounded p-0.5 text-pf-accent hover:bg-pf-accent/10"
+									class="shrink-0 rounded p-0.5 text-pf-selection hover:bg-pf-selection/10"
 									onclick={() => play(frame.id)}
 									aria-label="Play “{frame.title}”"
 									title="Play"
@@ -518,7 +525,7 @@
 							{#each flowsByStart.get(frame.id) ?? [] as flow (flow.id)}
 								<button
 									type="button"
-									class="inline-flex h-5 max-w-full items-center gap-1 rounded-full bg-pf-accent pr-2 pl-1.5 text-[11px] font-medium text-white shadow-sm hover:brightness-110"
+									class="inline-flex h-5 max-w-full items-center gap-1 rounded-[2px] bg-pf-accent pr-2 pl-1.5 text-[11px] font-medium text-pf-surface shadow-sm hover:brightness-110"
 									onclick={() => startFlow(flow)}
 									title="Play the flow “{flow.title}”"
 								>
@@ -532,7 +539,7 @@
 						<div
 							class={[
 								'pointer-events-none absolute',
-								frame.id === selected ? 'ring-2 ring-pf-accent' : 'ring-1 ring-pf-accent/60'
+								frame.id === selected ? 'ring-2 ring-pf-selection' : 'ring-1 ring-pf-selection/60'
 							]}
 							style:left="{s.left}px"
 							style:top="{s.top}px"

@@ -130,7 +130,7 @@ clicks inside the frame (a selectable table row, say), add
 | View | Keys |
 | --- | --- |
 | Player | ← → previous and next frame, R restart the flow (while one is playing) |
-| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, ⇧2 zoom to selection, ← → select previous and next frame, Enter play |
+| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, F or ⇧2 center and fit the selection, ← → select previous and next frame, Enter play |
 
 ## Theming
 

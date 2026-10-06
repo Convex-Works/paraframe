@@ -144,11 +144,9 @@
 
 <svelte:window {onkeydown} {onmessage} />
 
-<div class="pf-root flex h-dvh flex-col bg-pf-stage font-pf text-[13px] text-white/90">
-	<header
-		class="grid h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-white/10 bg-pf-ink px-2"
-	>
-		<div class="flex min-w-0 items-center gap-1">
+<div class="pf-root flex h-dvh flex-col bg-pf-stage font-pf text-[13px] text-pf-canvas-ink">
+	<header class="pf-toolbar z-20 m-3 mb-0 shrink-0">
+		<div class="pf-island pr-2.5">
 			<a
 				href={prototype.paths.canvas()}
 				class="pf-tool"
@@ -159,42 +157,42 @@
 			</a>
 			<p class="flex min-w-0 items-baseline gap-1.5 pl-1">
 				{#if frame}
-					<span class="shrink-0 text-white/50">{frame.section.title}</span>
-					<span class="text-white/30" aria-hidden="true">/</span>
+					<span class="hidden shrink-0 text-pf-muted sm:inline">{frame.section.title}</span>
+					<span class="hidden text-pf-muted/60 sm:inline" aria-hidden="true">/</span>
 				{/if}
-				<span class="truncate font-medium text-white">{frame?.title ?? frameId}</span>
+				<span class="truncate font-medium text-pf-ink">{frame?.title ?? frameId}</span>
 			</p>
 		</div>
 
-		<nav class="flex items-center gap-1" aria-label="Step through frames">
-			<button
-				type="button"
-				class="pf-tool"
-				onclick={() => handleKey('ArrowLeft')}
-				disabled={!prototype.prev(frameId)}
-				title="Previous frame (←)"
-				aria-label="Previous frame"
-			>
-				<Icon name="chevron-left" />
-			</button>
-			<span class="min-w-16 text-center text-white/60 tabular-nums">
-				{(frame?.index ?? 0) + 1} of {prototype.frames.length}
-			</span>
-			<button
-				type="button"
-				class="pf-tool"
-				onclick={() => handleKey('ArrowRight')}
-				disabled={!prototype.next(frameId)}
-				title="Next frame (→)"
-				aria-label="Next frame"
-			>
-				<Icon name="chevron-right" />
-			</button>
-		</nav>
+		<div class="pf-island ml-auto flex-wrap justify-end">
+			<nav class="flex items-center gap-1" aria-label="Step through frames">
+				<button
+					type="button"
+					class="pf-tool"
+					onclick={() => handleKey('ArrowLeft')}
+					disabled={!prototype.prev(frameId)}
+					title="Previous frame (←)"
+					aria-label="Previous frame"
+				>
+					<Icon name="chevron-left" />
+				</button>
+				<span class="min-w-16 text-center text-pf-muted tabular-nums">
+					{(frame?.index ?? 0) + 1} of {prototype.frames.length}
+				</span>
+				<button
+					type="button"
+					class="pf-tool"
+					onclick={() => handleKey('ArrowRight')}
+					disabled={!prototype.next(frameId)}
+					title="Next frame (→)"
+					aria-label="Next frame"
+				>
+					<Icon name="chevron-right" />
+				</button>
+			</nav>
 
-		<div class="flex items-center justify-end gap-1">
 			{#if prototype.flows.length}
-				<Menu label="Flows" tone="dark" align="end" class="pf-tool gap-1.5 px-2.5">
+				<Menu label="Flows" align="end" class="pf-tool gap-1.5 px-2">
 					{#snippet trigger()}
 						<span class="max-w-48 truncate">{flow?.title ?? 'Flows'}</span>
 						<Icon name="chevron-down" size={14} />
@@ -202,7 +200,6 @@
 					{#snippet children(close)}
 						{#each prototype.flows as item (item.id)}
 							<MenuItem
-								tone="dark"
 								checked={item.id === flowId}
 								onselect={() => {
 									close();
@@ -228,17 +225,16 @@
 				</button>
 			{/if}
 
-			<Menu label="Jump to a frame" tone="dark" align="end" class="pf-tool gap-1.5 px-2.5">
+			<Menu label="Jump to a frame" align="end" class="pf-tool gap-1.5 px-2">
 				{#snippet trigger()}
 					<span>Frames</span>
 					<Icon name="chevron-down" size={14} />
 				{/snippet}
 				{#snippet children(close)}
 					{#each prototype.sections as section (section.id)}
-						<p class="px-2 pt-2 pb-1 text-xs text-white/45">{section.title}</p>
+						<p class="px-2 pt-2 pb-1 text-xs text-pf-muted">{section.title}</p>
 						{#each section.frames as item (item.id)}
 							<MenuItem
-								tone="dark"
 								checked={item.id === frameId}
 								onselect={() => {
 									close();
@@ -252,7 +248,7 @@
 				{/snippet}
 			</Menu>
 
-			<Menu label="Scale" tone="dark" align="end" class="pf-tool gap-1.5 px-2.5">
+			<Menu label="Scale" align="end" class="pf-tool gap-1.5 px-2">
 				{#snippet trigger()}
 					<span class="tabular-nums">{Math.round(view.scale * 100)}%</span>
 					<Icon name="chevron-down" size={14} />
@@ -260,7 +256,6 @@
 				{#snippet children(close)}
 					{#each SCALES as option (option.value)}
 						<MenuItem
-							tone="dark"
 							checked={option.value === scaleMode}
 							onselect={() => {
 								close();
@@ -293,7 +288,7 @@
 	>
 		{#if frame}
 			<div
-				class="relative m-auto shrink-0 overflow-hidden bg-white shadow-[0_8px_40px_rgb(0_0_0/0.35)]"
+				class="relative m-auto shrink-0 overflow-hidden bg-white"
 				class:rounded-md={scaleMode !== 'width'}
 				style:width="{frame.size.width * view.scale}px"
 				style:height="{view.height * view.scale}px"
@@ -318,7 +313,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="m-auto text-white/60">
+			<p class="m-auto text-pf-canvas-muted">
 				No frame “{frameId}”. <a class="underline" href={prototype.paths.canvas()}>Open the canvas</a>
 			</p>
 		{/if}

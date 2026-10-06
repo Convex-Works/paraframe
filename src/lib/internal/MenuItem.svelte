@@ -23,7 +23,7 @@
 	role="menuitem"
 	onclick={onselect}
 	class={[
-		'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left',
+		'flex w-full items-center gap-2 rounded-[2px] px-2 py-1.5 text-left',
 		tone === 'dark' ? 'hover:bg-white/10 focus-visible:bg-white/10' : 'hover:bg-pf-wash focus-visible:bg-pf-wash',
 		'outline-none'
 	]}

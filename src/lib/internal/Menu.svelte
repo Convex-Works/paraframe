@@ -26,14 +26,10 @@
 	function place(event: ToggleEvent) {
 		if (event.newState !== 'open' || !button || !popover) return;
 		const rect = button.getBoundingClientRect();
-		popover.style.top = `${rect.bottom + 6}px`;
-		if (align === 'start') {
-			popover.style.left = `${rect.left}px`;
-			popover.style.right = 'auto';
-		} else {
-			popover.style.right = `${window.innerWidth - rect.right}px`;
-			popover.style.left = 'auto';
-		}
+		const gutter = 12;
+		const left = align === 'start' ? rect.left : rect.right - popover.offsetWidth;
+		popover.style.left = `${Math.max(gutter, Math.min(left, window.innerWidth - popover.offsetWidth - gutter))}px`;
+		popover.style.top = `${Math.max(gutter, Math.min(rect.bottom + 6, window.innerHeight - popover.offsetHeight - gutter))}px`;
 	}
 
 	const close = () => popover?.hidePopover();
@@ -53,12 +49,12 @@
 	bind:this={popover}
 	id="pf-menu-{id}"
 	popover="auto"
-	onbeforetoggle={place}
+	ontoggle={place}
 	class={[
-		'pf-menu fixed inset-auto m-0 max-h-[min(70vh,560px)] min-w-52 overflow-y-auto rounded-lg border p-1 text-[13px] shadow-xl',
+		'pf-menu fixed inset-auto m-0 max-h-[min(70vh,560px)] w-max min-w-52 max-w-[calc(100vw-24px)] overflow-y-auto rounded border p-1 text-[13px] shadow-lg',
 		tone === 'dark'
 			? 'border-white/10 bg-pf-ink text-white/90'
-			: 'border-pf-line bg-white text-pf-ink'
+			: 'border-pf-line bg-pf-surface text-pf-ink'
 	]}
 >
 	{@render children(close)}
