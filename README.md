@@ -96,7 +96,7 @@ The canvas compares the image's natural dimensions with the frame's CSS size,
 canvas zoom, device-pixel ratio and native pinch zoom. Supply direct image URLs
 at any capture resolution; 2× screenshots automatically switch at twice the zoom
 of 1× screenshots. Live frames load only within 96 CSS pixels of the viewport.
-Startup waits until pan and zoom have been idle for 250 ms, then loads one frame
+Startup waits until pan and zoom have been idle for 50 ms, then loads one frame
 at a time with a 50 ms gap after readiness. New gestures pause pending starts;
 off-screen or below-threshold frames leave the queue. A frame that never reports
 ready releases its queue slot after five seconds so other previews can load.

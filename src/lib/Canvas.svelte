@@ -34,7 +34,7 @@
 	const MIN_ZOOM = 0.02;
 	const MAX_ZOOM = 4;
 	const FIT_PADDING = 56;
-	const LOAD_IDLE_MS = 250;
+	const LOAD_IDLE_MS = 50;
 	// Below this on-screen width, frame titles are hidden.
 	const MIN_LABEL_WIDTH = 72;
 
