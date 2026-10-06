@@ -101,6 +101,129 @@ to images 15% below the switch point, and are destroyed after fading out. This
 hysteresis avoids reloading around the boundary. Failed live loads leave the
 thumbnail visible; failed thumbnails fall back to a live frame.
 
+## OIDC authentication
+
+Authentication is optional. Without a provider, paraframe has no account
+controls. With a provider, anyone can still view the prototype; signing in
+shows the teal avatar menu in the canvas and player.
+
+The browser uses same-origin server endpoints and receives user details only:
+
+```svelte
+<!-- src/routes/(viewer)/+layout.svelte -->
+<script lang="ts">
+  import 'paraframe/styles.css';
+  import { AuthProvider } from 'paraframe';
+  import { resolve } from '$app/paths';
+  let { children } = $props();
+</script>
+
+<AuthProvider paths={{
+  session: `${resolve('')}auth/session`,
+  login: `${resolve('')}auth/login`,
+  logout: `${resolve('')}auth/logout`
+}}>
+  {@render children()}
+</AuthProvider>
+```
+
+In server-only code, import `ServerOidcAuth` from `paraframe/server` and supply
+`authority`, `clientId`, `clientSecret`, `sessionSecret` and optionally
+`canvasPath` (default `/`). The session secret must be a random value of at
+least 32 characters. Store both secrets in private runtime environment
+variables. `handle(event)` accepts a SvelteKit request event and returns a
+response for login, session, logout and canvas callback requests; it returns
+`undefined` for other requests. The host mounts `auth/[action]/+server.ts` and
+intercepts callback queries at the canvas in `hooks.server.ts`. See the host
+prototype for a complete integration. Set SvelteKit `paths.relative: false`
+when using `resolve` for these endpoints. In a callback hook, throw SvelteKit
+`redirect(303, response.headers.get('location'))` so pending cookies are
+attached to the redirect response.
+
+Use a **confidential client** with authorization code flow and **S256 PKCE**.
+Register the exact absolute canvas URL as both the redirect URL and
+post-logout redirect URL, including its trailing slash and deployment base
+path. Keep the canvas route dynamic so the server can process callbacks.
+Frames and preview images can still be prerendered. This integration requires
+a server adapter; a static-only host cannot perform confidential token
+exchanges.
+
+The default scopes are `openid profile email offline_access`. The server
+validates state, PKCE, nonce, issuer, audience, authorized party, expiry and ID
+token signatures. Pending transactions expire after ten minutes and are
+consumed once. Sessions use authenticated encryption in HttpOnly, SameSite=Lax
+cookies, with Secure enabled on HTTPS. Tokens never enter browser JavaScript
+or storage. The session cookie has a seven-day maximum lifetime; access/ID
+token validity is checked independently and refresh tokens renew on the server.
+Cookies exceeding 3,800 bytes are rejected. Logout requires a same-origin POST,
+clears local cookies, then redirects to the discovered end-session endpoint.
+
+Concurrent refreshes are coalesced within one server process. Deploy a single
+Node instance, or add a shared session/refresh store before running multiple
+instances with rotating refresh tokens. Share the encryption key across server
+restarts; rotating it signs existing sessions out.
+
+`useAuth()` exposes the reactive user (`sub`, `name`, `email`, `picture`),
+loading/busy/error state, and `signIn()`, `signOut()` and `clearError()` methods.
+The avatar uses the profile picture when available and otherwise the user's
+first initial. Theme its teal circle with `--pf-avatar`.
+
+```sh
+pnpm test # OIDC flow, cookie security, renewal and logout; comment storage and endpoints
+```
+
+## Comments
+
+Optional, like authentication. Viewers press **C** (or the speech-bubble
+button) to enter comment mode in the canvas or player:
+
+- Click a frame to drop a pin and write the first comment. Enter sends,
+  Shift+Enter starts a new line, Escape cancels.
+- Pins show on frames at all times, with the author's avatar. Hovering grows a pin into a preview of the
+  first comment; clicking opens the thread to reply, resolve, edit or delete.
+- The comments panel lists every thread with search, sort (date or frame),
+  resolved and "only your threads" filters, and unread markers. Choosing a
+  thread in the canvas glides the view to its frame; in the player it
+  switches frames.
+- "Copy link" gives a canvas URL ending `#comment-<id>` that opens the thread.
+- Other viewers' changes arrive live over server-sent events.
+
+Comments are stored in SQLite through Node's built-in `node:sqlite` (Node
+22.13+ without flags; no native dependency). Add the provider inside
+`AuthProvider`:
+
+```svelte
+<AuthProvider paths={…}>
+  <CommentsProvider path="{resolve('')}comments">
+    {@render children()}
+  </CommentsProvider>
+</AuthProvider>
+```
+
+and mount the server endpoints at that path:
+
+```ts
+// src/lib/server/comments.ts
+import { ServerComments } from 'paraframe/server';
+export const comments = new ServerComments<RequestEvent>({
+  database: 'data/comments.sqlite', // created on first request
+  path: '/comments',
+  user: (event) => auth.user(event)  // ServerOidcAuth, or any { sub, name, picture? } | null
+});
+
+// src/routes/comments/[...path]/+server.ts  (GET, POST, PATCH, DELETE)
+const handle: RequestHandler = async (event) =>
+  await comments.handle(event) ?? new Response('Not found', { status: 404 });
+```
+
+Reading and writing require a user by default; pass `public: true` to let
+signed-out viewers read. Writes require a same-origin JSON request. Anyone
+signed in can reply and resolve; only authors edit or delete their comments,
+and deleting a thread's first comment deletes the thread. Pins are stored in
+frame pixels, so they stay put at any zoom. Read state is per user. Live
+updates are in-process: serve a single Node instance, as for authentication.
+Theme the comment blue with `--pf-comment` and `--pf-comment-soft`.
+
 ## Linking frames
 
 Inside a frame:
@@ -129,8 +252,8 @@ clicks inside the frame (a selectable table row, say), add
 
 | View | Keys |
 | --- | --- |
-| Player | ← → previous and next frame, R restart the flow (while one is playing) |
-| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, F or ⇧2 center and fit the selection, ← → select previous and next frame, Enter play |
+| Player | ← → previous and next frame, R restart the flow (while one is playing), C comment mode, Esc close the open comment, then leave comment mode |
+| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, F or ⇧2 center and fit the selection, ← → select previous and next frame, Enter play, C comment mode, Esc close the open comment, then leave comment mode |
 
 ## Theming
 

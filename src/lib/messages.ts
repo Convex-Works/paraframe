@@ -23,7 +23,7 @@ export function postToHost(message: FrameMessage) {
 }
 
 /** Keys the player handles. Frames forward them so shortcuts work while a frame has focus. */
-export const PLAYER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'r', 'R']);
+export const PLAYER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'r', 'R', 'c', 'C']);
 
 export function isEditable(target: EventTarget | null) {
 	return (

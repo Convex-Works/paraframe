@@ -7,10 +7,14 @@
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Icon from './internal/Icon.svelte';
+	import AccountMenu from './internal/AccountMenu.svelte';
+	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
+	import CommentsPanel from './internal/CommentsPanel.svelte';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable, isFrameMessage, PLAYER_KEYS } from './messages.js';
+	import { useComments, type CommentThread } from './comments.js';
 	import type { Flow, Prototype } from './types.js';
 
 	let { prototype, frameId }: { prototype: Prototype; frameId: string } = $props();
@@ -36,6 +40,14 @@
 	let stageHeight = $state(0);
 
 	const flow = $derived(prototype.flows.find((f) => f.id === flowId));
+
+	const comments = useComments();
+	const commenting = $derived(comments?.active ?? false);
+	let draft = $state<CommentDraft>();
+	let commentLayer = $state<CommentLayer>();
+	let stage = $state<HTMLElement>();
+	let sheet = $state<HTMLElement>();
+	let scroll = $state(0);
 
 	const view = $derived.by(() => {
 		const { width, height } = frame?.size ?? prototype.size;
@@ -106,9 +118,71 @@
 		if (key === 'ArrowRight') show(prototype.next(frameId)?.id);
 		else if (key === 'ArrowLeft') show(prototype.prev(frameId)?.id);
 		else if ((key === 'r' || key === 'R') && flow) restart();
+		else if (key === 'c' || key === 'C') setCommenting(!commenting);
 	}
 
+	function setCommenting(on: boolean) {
+		if (!comments) return;
+		comments.active = on;
+		if (!on) {
+			draft = undefined;
+			comments.openThread(undefined);
+		}
+	}
+
+	// Leaving a frame discards an empty new comment on it.
+	$effect(() => {
+		if (draft && draft.frame !== frameId) untrack(() => (draft = undefined));
+	});
+
+	// In comment mode a click on the frame starts a thread; a click away from an open thread closes it.
+	function placeComment(event: MouseEvent) {
+		if (!comments || !frame) return;
+		if (draft?.text.trim()) {
+			commentLayer?.focusDraft();
+			return;
+		}
+		if (comments.openId !== undefined) {
+			comments.openThread(undefined);
+			return;
+		}
+		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		draft = {
+			frame: frame.id,
+			x: (event.clientX - rect.left) / view.scale,
+			y: (event.clientY - rect.top) / view.scale,
+			text: ''
+		};
+	}
+
+	function focusThread(thread: CommentThread) {
+		if (!comments) return;
+		draft = undefined;
+		comments.openThread(thread.id);
+		if (thread.frame !== frameId) show(thread.frame);
+	}
+
+	// The part of the stage in view, in the frame's own coordinates, so open threads stay on screen.
+	const commentBounds = $derived.by(() => {
+		void [scroll, view, frame, stageWidth, stageHeight];
+		if (!stage || !sheet) return { left: 0, top: 0, right: 0, bottom: 0 };
+		const outer = stage.getBoundingClientRect();
+		const inner = sheet.getBoundingClientRect();
+		return {
+			left: outer.left - inner.left,
+			top: outer.top - inner.top,
+			right: outer.left - inner.left + stageWidth,
+			bottom: outer.top - inner.top + stageHeight
+		};
+	});
+
 	function onkeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && comments && !isEditable(event.target) && !document.querySelector(':popover-open')) {
+			if (draft) draft = undefined;
+			else if (comments.openId !== undefined) comments.openThread(undefined);
+			else if (commenting) setCommenting(false);
+			return;
+		}
 		if (!PLAYER_KEYS.has(event.key)) return;
 		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target)) return;
 		if (document.querySelector(':popover-open')) return;
@@ -213,6 +287,22 @@
 				</Menu>
 			{/if}
 
+			{#if comments}
+				<button
+					type="button"
+					class="pf-tool relative"
+					aria-pressed={commenting}
+					aria-label="Comments"
+					title="Comments (C)"
+					onclick={() => setCommenting(!commenting)}
+				>
+					<Icon name="comment" />
+					{#if comments.unreadCount && !commenting}
+						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment ring-2 ring-pf-surface"></span>
+					{/if}
+				</button>
+			{/if}
+
 			{#if flow}
 				<button
 					type="button"
@@ -278,21 +368,26 @@
 			>
 				<Icon name="external" />
 			</a>
+			<AccountMenu />
 		</div>
 	</header>
 
+	<div class="flex min-h-0 flex-1">
 	<main
+		bind:this={stage}
 		class="flex min-h-0 flex-1 overflow-auto"
 		bind:clientWidth={stageWidth}
 		bind:clientHeight={stageHeight}
+		onscroll={() => scroll++}
 	>
 		{#if frame}
 			<div
-				class="relative m-auto shrink-0 overflow-hidden bg-white"
-				class:rounded-md={scaleMode !== 'width'}
+				bind:this={sheet}
+				class="relative m-auto shrink-0"
 				style:width="{frame.size.width * view.scale}px"
 				style:height="{view.height * view.scale}px"
 			>
+			<div class={['absolute inset-0 overflow-hidden bg-white', scaleMode !== 'width' && 'rounded-md']}>
 				{#each slots as slot (slot.key)}
 					{@const shown = prototype.get(slot.id)}
 					{#if shown}
@@ -312,10 +407,34 @@
 					{/if}
 				{/each}
 			</div>
+			{#if comments}
+				{#if commenting}
+					<!-- Catches clicks meant for a new comment before they reach the frame. -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<div class="pf-comment-cursor absolute inset-0" role="presentation" onclick={placeComment}></div>
+				{/if}
+				<CommentLayer
+					bind:this={commentLayer}
+					bind:draft
+					{prototype}
+					place={(id, x, y) => (id === frame.id ? { left: x * view.scale, top: y * view.scale } : undefined)}
+					bounds={commentBounds}
+				/>
+			{/if}
+			</div>
 		{:else}
 			<p class="m-auto text-pf-canvas-muted">
 				No frame “{frameId}”. <a class="underline" href={prototype.paths.canvas()}>Open the canvas</a>
 			</p>
 		{/if}
 	</main>
+	{#if comments && commenting}
+		<CommentsPanel
+			{prototype}
+			class="my-3 mr-3 w-80 shrink-0"
+			onselect={focusThread}
+			onclose={() => setCommenting(false)}
+		/>
+	{/if}
+	</div>
 </div>

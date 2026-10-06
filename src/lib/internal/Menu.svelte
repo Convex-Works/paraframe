@@ -22,8 +22,10 @@
 	const id = $props.id();
 	let button = $state<HTMLButtonElement>();
 	let popover = $state<HTMLDivElement>();
+	let open = $state(false);
 
 	function place(event: ToggleEvent) {
+		open = event.newState === 'open';
 		if (event.newState !== 'open' || !button || !popover) return;
 		const rect = button.getBoundingClientRect();
 		const gutter = 12;
@@ -40,6 +42,8 @@
 	type="button"
 	popovertarget="pf-menu-{id}"
 	aria-label={label}
+	aria-expanded={open}
+	aria-controls="pf-menu-{id}"
 	title={label}
 	class={className}
 >

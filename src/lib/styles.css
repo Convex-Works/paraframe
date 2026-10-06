@@ -22,6 +22,9 @@
 	--pf-grid: rgb(168 162 158 / 0.2);
 	--pf-stage: #1c1917;
 	--pf-accent: #57534e;
+	--pf-avatar: #009aaa;
+	--pf-comment: #0d99ff;
+	--pf-comment-soft: #e5f4ff;
 }
 
 @theme inline {
@@ -38,6 +41,9 @@
 	--color-pf-section: var(--pf-section);
 	--color-pf-stage: var(--pf-stage);
 	--color-pf-accent: var(--pf-accent);
+	--color-pf-avatar: var(--pf-avatar);
+	--color-pf-comment: var(--pf-comment);
+	--color-pf-comment-soft: var(--pf-comment-soft);
 }
 
 @layer components {
@@ -63,6 +69,19 @@
 		box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
 		pointer-events: auto;
 	}
+	.pf-account {
+		display: inline-flex;
+		height: 2rem;
+		align-items: center;
+		gap: 0.5rem;
+		border-radius: 9999px;
+		padding-right: 0.625rem;
+		background: #e7e7e7;
+		color: var(--pf-ink);
+	}
+	.pf-account:hover { background: #dadada; }
+	.pf-account:focus-visible { outline: 2px solid var(--pf-accent); outline-offset: 2px; }
+
 	.pf-tool,
 	.pf-tool-light {
 		display: inline-flex;
@@ -84,6 +103,15 @@
 	.pf-tool-light:hover {
 		background: var(--pf-wash);
 	}
+	/* The comment tool: a pin whose bottom-left point is the hotspot. */
+	.pf-comment-cursor {
+		cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M14 1.5a12.5 12.5 0 1 1 0 25H1.5V14A12.5 12.5 0 0 1 14 1.5z' fill='white' stroke='%231c1917' stroke-width='1.5'/%3E%3Cpath d='M14 9v10M9 14h10' stroke='%231c1917' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 1 27, crosshair;
+	}
+	.pf-tool[aria-pressed='true'] {
+		background: var(--pf-ink);
+		color: var(--pf-surface);
+	}
+
 	.pf-tool:focus-visible,
 	.pf-tool-light:focus-visible {
 		box-shadow: 0 0 0 2px var(--pf-accent);

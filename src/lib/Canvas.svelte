@@ -7,13 +7,18 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { devicePixelRatio } from 'svelte/reactivity/window';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import Icon from './internal/Icon.svelte';
+	import AccountMenu from './internal/AccountMenu.svelte';
 	import CanvasPreview from './internal/CanvasPreview.svelte';
+	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
+	import CommentsPanel from './internal/CommentsPanel.svelte';
+	import { linkedThread } from './internal/comment-links.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable } from './messages.js';
+	import { useComments, type CommentThread } from './comments.js';
 	import type { Flow, Frame, Prototype, Section } from './types.js';
 
 	let {
@@ -35,6 +40,9 @@
 	const FIT_PADDING = 56;
 	// Below this on-screen width, frame titles are hidden.
 	const MIN_LABEL_WIDTH = 72;
+	// The comments panel floats over the right edge; fitting keeps frames clear of it.
+	const PANEL_INSET = 320 + 12 * 2;
+	const TOOLBAR_HEIGHT = 56;
 
 	type Box = { x: number; y: number; w: number; h: number };
 	type Camera = { x: number; y: number; z: number };
@@ -86,6 +94,11 @@
 	let hovered = $state<string | undefined>();
 	let panning = $state(false);
 	let pageScale = $state(1);
+	const comments = useComments();
+	const commenting = $derived(comments?.active ?? false);
+	const rightInset = $derived(commenting ? PANEL_INSET : 0);
+	let draft = $state<CommentDraft>();
+	let commentLayer = $state<CommentLayer>();
 	const pixelScale = $derived(camera.z * (devicePixelRatio.current ?? 1) * pageScale);
 
 	onMount(() => {
@@ -124,17 +137,59 @@
 
 	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-	function fit(box: Box, padding = FIT_PADDING) {
+	function fitCamera(box: Box, padding = FIT_PADDING, maxZoom = MAX_ZOOM): Camera {
+		const visible = width - rightInset;
 		const z = clamp(
-			Math.min((width - padding * 2) / box.w, (height - padding * 2) / box.h),
+			Math.min((visible - padding * 2) / box.w, (height - padding * 2) / box.h),
 			MIN_ZOOM,
-			MAX_ZOOM
+			maxZoom
 		);
-		camera = { z, x: (width - box.w * z) / 2 - box.x * z, y: (height - box.h * z) / 2 - box.y * z };
+		return { z, x: (visible - box.w * z) / 2 - box.x * z, y: (height - box.h * z) / 2 - box.y * z };
+	}
+
+	function fit(box: Box, padding = FIT_PADDING) {
+		stopAnimation();
+		camera = fitCamera(box, padding);
 		persist();
 	}
 
+	let animation = 0;
+	function stopAnimation() {
+		cancelAnimationFrame(animation);
+		animation = 0;
+	}
+
+	// Glides to a camera. The point at the centre of the view moves linearly and
+	// the zoom changes geometrically, so zooming and panning feel even.
+	function animateTo(target: Camera, duration = 480) {
+		stopAnimation();
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			camera = target;
+			persist();
+			return;
+		}
+		const from = { ...camera };
+		const cx = width / 2;
+		const cy = height / 2;
+		const a = { x: (cx - from.x) / from.z, y: (cy - from.y) / from.z };
+		const b = { x: (cx - target.x) / target.z, y: (cy - target.y) / target.z };
+		const start = performance.now();
+		const step = (time: number) => {
+			const t = Math.min(1, (time - start) / duration);
+			const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+			const z = from.z * (target.z / from.z) ** e;
+			camera = { z, x: cx - (a.x + (b.x - a.x) * e) * z, y: cy - (a.y + (b.y - a.y) * e) * z };
+			if (t < 1) animation = requestAnimationFrame(step);
+			else {
+				animation = 0;
+				persist();
+			}
+		};
+		animation = requestAnimationFrame(step);
+	}
+
 	function zoomAt(factor: number, sx = width / 2, sy = height / 2) {
+		stopAnimation();
 		const z = clamp(camera.z * factor, MIN_ZOOM, MAX_ZOOM);
 		const cx = (sx - camera.x) / camera.z;
 		const cy = (sy - camera.y) / camera.z;
@@ -191,29 +246,102 @@
 		return map;
 	});
 
+	// The canvas point under the pointer.
+	function toCanvas(event: MouseEvent) {
+		const rect = viewport!.getBoundingClientRect();
+		return {
+			x: (event.clientX - rect.left - camera.x) / camera.z,
+			y: (event.clientY - rect.top - camera.y) / camera.z
+		};
+	}
+
 	function hit(event: MouseEvent): Frame | undefined {
 		if (!viewport) return undefined;
-		const rect = viewport.getBoundingClientRect();
-		const cx = (event.clientX - rect.left - camera.x) / camera.z;
-		const cy = (event.clientY - rect.top - camera.y) / camera.z;
+		const { x, y } = toCanvas(event);
 		for (const [id, b] of layout.frames) {
-			if (cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h) return prototype.get(id);
+			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return prototype.get(id);
 		}
 		return undefined;
 	}
+
+	function setCommenting(on: boolean) {
+		if (!comments) return;
+		comments.active = on;
+		if (!on) {
+			draft = undefined;
+			comments.openThread(undefined);
+		}
+	}
+
+	// In comment mode a click starts a thread on the frame under it. A click away
+	// from an open thread closes it first, as does Escape.
+	function placeComment(event: MouseEvent) {
+		if (!comments) return;
+		if (draft?.text.trim()) {
+			commentLayer?.focusDraft();
+			return;
+		}
+		if (comments.openId !== undefined) {
+			comments.openThread(undefined);
+			return;
+		}
+		const frame = hit(event);
+		const box = frame && layout.frames.get(frame.id);
+		if (!frame || !box) {
+			draft = undefined;
+			return;
+		}
+		const { x, y } = toCanvas(event);
+		draft = { frame: frame.id, x: x - box.x, y: y - box.y, text: '' };
+	}
+
+	// Pans and zooms to a thread's frame unless its pin is already in view, then opens it.
+	function focusThread(thread: CommentThread) {
+		if (!comments) return;
+		draft = undefined;
+		comments.active = true;
+		comments.openThread(thread.id);
+		const box = layout.frames.get(thread.frame);
+		if (!box) return;
+		const target = fitCamera(box, 72, Math.max(camera.z, 1));
+		const pin = placePin(thread.frame, thread.x, thread.y);
+		const inView = pin && pin.left > 40 && pin.left < width - rightInset - 360
+			&& pin.top > TOOLBAR_HEIGHT + 40 && pin.top < height - 40;
+		if (!inView || camera.z < target.z * 0.5) animateTo(target);
+	}
+
+	function placePin(frame: string, x: number, y: number) {
+		const b = layout.frames.get(frame);
+		if (!b) return undefined;
+		return { left: (b.x + x) * camera.z + camera.x, top: (b.y + y) * camera.z + camera.y };
+	}
+
+	// Open a shared link to a thread once comments have loaded.
+	let linked = $state<number>();
+	$effect(() => {
+		if (!comments || linked === undefined || comments.loading || !ready) return;
+		const thread = comments.threads.find((t) => t.id === linked);
+		linked = undefined;
+		replaceState(`${location.pathname}${location.search}`, {});
+		if (thread) {
+			comments.filters.showResolved ||= Boolean(thread.resolvedAt);
+			focusThread(thread);
+		}
+	});
 
 	let drag: { sx: number; sy: number; x: number; y: number; moved: boolean } | undefined;
 
 	function onpointerdown(event: PointerEvent) {
 		if (event.button !== 0 && event.button !== 1) return;
 		if ((event.target as Element).closest('[data-pf-ui]')) return;
+		stopAnimation();
 		viewport?.setPointerCapture(event.pointerId);
 		drag = { sx: event.clientX, sy: event.clientY, x: camera.x, y: camera.y, moved: false };
 	}
 
 	function onpointermove(event: PointerEvent) {
 		if (!drag) {
-			hovered = hit(event)?.id;
+			hovered = commenting ? undefined : hit(event)?.id;
 			return;
 		}
 		const dx = event.clientX - drag.sx;
@@ -228,7 +356,12 @@
 	function onpointerup(event: PointerEvent) {
 		if (!drag) return;
 		if (drag.moved) persist();
-		else if (event.button === 0) select(hit(event)?.id);
+		else if (event.button === 0 && commenting) placeComment(event);
+		else if (event.button === 0) {
+			// Outside comment mode a click away from an open thread just closes it.
+			if (comments?.openId !== undefined) comments.openThread(undefined);
+			select(hit(event)?.id);
+		}
 		drag = undefined;
 		panning = false;
 	}
@@ -242,7 +375,11 @@
 	// Wheel listeners must be non-passive to stop the browser zooming the page.
 	function wheel(node: HTMLElement) {
 		const onwheel = (event: WheelEvent) => {
+			// Let an open thread scroll its replies.
+			const scroller = (event.target as Element).closest('[data-pf-scroll]');
+			if (scroller && !event.ctrlKey && !event.metaKey && scroller.scrollHeight > scroller.clientHeight) return;
 			event.preventDefault();
+			stopAnimation();
 			const unit = event.deltaMode === 1 ? 16 : 1;
 			if (event.ctrlKey || event.metaKey) {
 				const rect = node.getBoundingClientRect();
@@ -280,7 +417,13 @@
 			Minus: () => zoomAt(0.8),
 			NumpadSubtract: () => zoomAt(0.8),
 			Enter: () => selected && play(selected),
-			Escape: () => select(undefined),
+			KeyC: () => setCommenting(!commenting),
+			Escape: () => {
+				if (draft) draft = undefined;
+				else if (comments?.openId !== undefined) comments.openThread(undefined);
+				else if (commenting) setCommenting(false);
+				else select(undefined);
+			},
 			ArrowRight: () => step(1),
 			ArrowLeft: () => step(-1)
 		};
@@ -303,8 +446,12 @@
 		if (selected && !prototype.get(selected)) selected = undefined;
 		if (stored) camera = stored;
 		else fit(layout.bounds);
+		linked = linkedThread(location.hash);
 		ready = true;
-		return () => clearTimeout(persistTimer);
+		return () => {
+			clearTimeout(persistTimer);
+			stopAnimation();
+		};
 	});
 
 	// Screen position of a canvas box.
@@ -386,6 +533,22 @@
 				{/snippet}
 			</Menu>
 
+			{#if comments}
+				<button
+					type="button"
+					class="pf-tool relative"
+					aria-pressed={commenting}
+					aria-label="Comments"
+					title="Comments (C)"
+					onclick={() => setCommenting(!commenting)}
+				>
+					<Icon name="comment" />
+					{#if comments.unreadCount && !commenting}
+						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment ring-2 ring-pf-surface"></span>
+					{/if}
+				</button>
+			{/if}
+
 			<button
 				type="button"
 				class="inline-flex h-7 items-center gap-1.5 rounded-[2px] bg-pf-accent px-2.5 font-medium text-pf-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pf-accent"
@@ -395,6 +558,7 @@
 				<Icon name="play" size={14} />
 				Play
 			</button>
+			<AccountMenu />
 		</nav>
 	</header>
 
@@ -411,7 +575,10 @@
 		{ondblclick}
 		role="application"
 		aria-label="Canvas of all frames"
-		class={['relative min-h-0 flex-1 touch-none overflow-hidden select-none', panning && 'cursor-grabbing']}
+		class={[
+			'relative min-h-0 flex-1 touch-none overflow-hidden select-none',
+			panning ? 'cursor-grabbing' : commenting && 'pf-comment-cursor'
+		]}
 		style:background-image="radial-gradient(circle, var(--pf-grid) 1px, transparent 1.4px)"
 		style:background-size="{grid.size}px {grid.size}px"
 		style:background-position="{grid.x}px {grid.y}px"
@@ -535,7 +702,7 @@
 							{/each}
 						</div>
 					{/if}
-					{#if frame.id === selected || (frame.id === hovered && !panning)}
+					{#if (frame.id === selected && !commenting) || (frame.id === hovered && !panning)}
 						<div
 							class={[
 								'pointer-events-none absolute',
@@ -549,6 +716,25 @@
 					{/if}
 				{/if}
 			{/each}
+
+			{#if comments}
+				<CommentLayer
+					bind:this={commentLayer}
+					bind:draft
+					{prototype}
+					place={placePin}
+					bounds={{ left: 0, top: TOOLBAR_HEIGHT, right: width - rightInset, bottom: height }}
+				/>
+			{/if}
 		{/if}
 	</div>
+
+	{#if comments && commenting}
+		<CommentsPanel
+			{prototype}
+			class="absolute top-[60px] right-3 bottom-3 z-20 w-80"
+			onselect={focusThread}
+			onclose={() => setCommenting(false)}
+		/>
+	{/if}
 </div>

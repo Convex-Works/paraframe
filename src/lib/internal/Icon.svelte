@@ -11,7 +11,14 @@
 		check: 'M5 12.5l4.5 4.5L19 7.5',
 		plus: 'M12 5v14M5 12h14',
 		minus: 'M5 12h14',
-		fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'
+		fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+		comment: 'M12 3.5a8.5 8.5 0 1 1 0 17H3.5V12A8.5 8.5 0 0 1 12 3.5z',
+		search: 'M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM20 20l-4.4-4.4',
+		filter: 'M4 7h16M7 12h10M10 17h4',
+		more: 'M5 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM19 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2z',
+		resolve: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM8 12.2l2.7 2.7L16 9.6',
+		close: 'M6 6l12 12M18 6L6 18',
+		send: 'M12 19V5M6.5 10.5L12 5l5.5 5.5'
 	} as const;
 	export type IconName = keyof typeof PATHS;
 </script>
