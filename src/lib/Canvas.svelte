@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from './internal/Icon.svelte';
 	import CanvasPreview from './internal/CanvasPreview.svelte';
+	import { createCanvasLoadQueue } from './internal/canvas-load-queue.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
@@ -33,6 +34,7 @@
 	const MIN_ZOOM = 0.02;
 	const MAX_ZOOM = 4;
 	const FIT_PADDING = 56;
+	const LOAD_IDLE_MS = 250;
 	// Below this on-screen width, frame titles are hidden.
 	const MIN_LABEL_WIDTH = 72;
 
@@ -87,6 +89,17 @@
 	let panning = $state(false);
 	let pageScale = $state(1);
 	const pixelScale = $derived(camera.z * (devicePixelRatio.current ?? 1) * pageScale);
+	const loadQueue = createCanvasLoadQueue();
+
+	$effect(() => {
+		// Camera changes cover wheel, keyboard, toolbar and pointer gestures. Also
+		// wait for native pinch zoom and viewport/density changes to settle.
+		camera.x; camera.y; camera.z; pixelScale; width; height;
+		loadQueue.pause();
+		if (!ready || panning) return;
+		const timer = setTimeout(() => loadQueue.resume(), LOAD_IDLE_MS);
+		return () => clearTimeout(timer);
+	});
 
 	onMount(() => {
 		// Pinch zoom magnifies the visual viewport without changing devicePixelRatio.
@@ -304,7 +317,10 @@
 		if (stored) camera = stored;
 		else fit(layout.bounds);
 		ready = true;
-		return () => clearTimeout(persistTimer);
+		return () => {
+			clearTimeout(persistTimer);
+			loadQueue.destroy();
+		};
 	});
 
 	// Screen position of a canvas box.
@@ -448,6 +464,7 @@
 									preview={preview(frame)}
 									{pixelScale}
 									nearViewport={nearViewport(b)}
+									scheduleLoad={loadQueue.request}
 								/>
 							{:else}
 								<iframe
