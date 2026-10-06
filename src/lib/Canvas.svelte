@@ -14,6 +14,7 @@
 	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
 	import CommentsPanel from './internal/CommentsPanel.svelte';
 	import { linkedThread } from './internal/comment-links.js';
+	import { createCanvasLoadQueue } from './internal/canvas-load-queue.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
@@ -38,6 +39,7 @@
 	const MIN_ZOOM = 0.02;
 	const MAX_ZOOM = 4;
 	const FIT_PADDING = 56;
+	const LOAD_IDLE_MS = 250;
 	// Below this on-screen width, frame titles are hidden.
 	const MIN_LABEL_WIDTH = 72;
 	// The comments panel floats over the right edge; fitting keeps frames clear of it.
@@ -100,6 +102,17 @@
 	let draft = $state<CommentDraft>();
 	let commentLayer = $state<CommentLayer>();
 	const pixelScale = $derived(camera.z * (devicePixelRatio.current ?? 1) * pageScale);
+	const loadQueue = createCanvasLoadQueue();
+
+	$effect(() => {
+		// Camera changes cover wheel, keyboard, toolbar and pointer gestures. Also
+		// wait for native pinch zoom and viewport/density changes to settle.
+		camera.x; camera.y; camera.z; pixelScale; width; height;
+		loadQueue.pause();
+		if (!ready || panning) return;
+		const timer = setTimeout(() => loadQueue.resume(), LOAD_IDLE_MS);
+		return () => clearTimeout(timer);
+	});
 
 	onMount(() => {
 		// Pinch zoom magnifies the visual viewport without changing devicePixelRatio.
@@ -451,6 +464,7 @@
 		return () => {
 			clearTimeout(persistTimer);
 			stopAnimation();
+			loadQueue.destroy();
 		};
 	});
 
@@ -615,6 +629,7 @@
 									preview={preview(frame)}
 									{pixelScale}
 									nearViewport={nearViewport(b)}
+									scheduleLoad={loadQueue.request}
 								/>
 							{:else}
 								<iframe

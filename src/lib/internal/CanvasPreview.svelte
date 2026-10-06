@@ -2,13 +2,15 @@
 	import { untrack } from 'svelte';
 	import { isFrameMessage } from '../messages.js';
 	import type { Frame } from '../types.js';
+	import type { ScheduleFrameLoad } from './canvas-load-queue.js';
 
 	let {
 		frame,
 		src,
 		preview,
 		pixelScale,
-		nearViewport
+		nearViewport,
+		scheduleLoad
 	}: {
 		frame: Frame;
 		src: string;
@@ -16,6 +18,7 @@
 		/** Device pixels per canvas CSS pixel, including canvas and browser zoom. */
 		pixelScale: number;
 		nearViewport: boolean;
+		scheduleLoad: ScheduleFrameLoad;
 	} = $props();
 
 	const FADE_MS = 160;
@@ -26,6 +29,7 @@
 	let live = $state(false);
 	let mounted = $state(false);
 	let ready = $state(false);
+	let completeLoad = () => {};
 
 	// Direct image URLs have no srcset density correction: natural dimensions are
 	// the screenshot's available pixels. Use the weaker axis if sizes differ.
@@ -44,8 +48,13 @@
 
 	$effect(() => {
 		if (live) {
-			mounted = true;
-			return;
+			if (untrack(() => mounted)) return;
+			// The canvas starts this job only while idle. Effect cleanup cancels it
+			// when this frame leaves the viewport or returns to thumbnail scale.
+			return scheduleLoad((complete) => {
+				completeLoad = complete;
+				mounted = true;
+			});
 		}
 		// Keep the image underneath throughout both fades. Off-screen frames and
 		// frames that never finished loading can be destroyed immediately.
@@ -67,7 +76,10 @@
 			cancelAnimationFrame(paint);
 			// Allow ResizeObserver-driven charts to lay out after fonts and hydration.
 			paint = requestAnimationFrame(() => {
-				paint = requestAnimationFrame(() => { ready = true; });
+				paint = requestAnimationFrame(() => {
+					ready = true;
+					completeLoad();
+				});
 			});
 		}
 		function onload() {
@@ -85,6 +97,7 @@
 		window.addEventListener('message', onmessage);
 		return () => {
 			cancelAnimationFrame(paint);
+			completeLoad();
 			node.removeEventListener('load', onload);
 			window.removeEventListener('message', onmessage);
 			ready = false;
