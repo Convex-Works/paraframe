@@ -491,19 +491,19 @@
 
 <div class="pf-root relative flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar absolute inset-x-3 top-3 z-20">
-		<div class="pf-island gap-2 px-2.5">
-			<Icon name="canvas" size={16} />
+		<div class="pf-island min-h-10 gap-2.5 py-1.5 pr-5 pl-3.5">
+			<span class="shrink-0"><Icon name="canvas" size={18} /></span>
 			<div class="min-w-0">
-				<h1 class="truncate text-sm font-semibold leading-7">{prototype.title}</h1>
+				<h1 class="truncate text-sm font-semibold leading-5">{prototype.title}</h1>
 				{#if prototype.description}
-					<p class="truncate text-xs text-pf-muted">{prototype.description}</p>
+					<p class="truncate text-xs text-pf-island-muted">{prototype.description}</p>
 				{/if}
 			</div>
 		</div>
 
 		<nav class="pf-island ml-auto shrink-0" aria-label="Canvas controls">
 			{#if prototype.flows.length}
-				<Menu label="Play a flow" align="end" class="pf-tool gap-1.5 px-2">
+				<Menu label="Play a flow" align="end" class="pf-tool gap-1.5 px-3">
 					{#snippet trigger()}
 						<span>Flows</span>
 						<Icon name="chevron-down" size={14} />
@@ -524,7 +524,7 @@
 				</Menu>
 			{/if}
 
-			<Menu label="Zoom" align="end" class="pf-tool w-18 justify-between gap-1.5 px-2">
+			<Menu label="Zoom" align="end" class="pf-tool w-20 justify-between gap-1.5 px-3">
 				{#snippet trigger()}
 					<span class="tabular-nums">{Math.round(camera.z * 100)}%</span>
 					<Icon name="chevron-down" size={14} />
@@ -558,14 +558,14 @@
 				>
 					<Icon name="comment" />
 					{#if comments.unreadCount && !commenting}
-						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment ring-2 ring-pf-surface"></span>
+						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment"></span>
 					{/if}
 				</button>
 			{/if}
 
 			<button
 				type="button"
-				class="inline-flex h-7 items-center gap-1.5 rounded-[2px] bg-pf-accent px-2.5 font-medium text-pf-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pf-accent"
+				class="pf-tool pf-tool-primary"
 				onclick={() => play(selected)}
 				title={selectedFrame ? `Play from “${selectedFrame.title}”` : 'Play from the first frame'}
 			>

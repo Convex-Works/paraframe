@@ -220,7 +220,7 @@
 
 <div class="pf-root flex h-dvh flex-col bg-pf-stage font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar z-20 m-3 mb-0 shrink-0">
-		<div class="pf-island pr-2.5">
+		<div class="pf-island pr-4">
 			<a
 				href={prototype.paths.canvas()}
 				class="pf-tool"
@@ -231,10 +231,10 @@
 			</a>
 			<p class="flex min-w-0 items-baseline gap-1.5 pl-1">
 				{#if frame}
-					<span class="hidden shrink-0 text-pf-muted sm:inline">{frame.section.title}</span>
-					<span class="hidden text-pf-muted/60 sm:inline" aria-hidden="true">/</span>
+					<span class="hidden shrink-0 text-pf-island-muted sm:inline">{frame.section.title}</span>
+					<span class="hidden text-pf-island-muted sm:inline" aria-hidden="true">/</span>
 				{/if}
-				<span class="truncate font-medium text-pf-ink">{frame?.title ?? frameId}</span>
+				<span class="truncate font-medium">{frame?.title ?? frameId}</span>
 			</p>
 		</div>
 
@@ -250,7 +250,7 @@
 				>
 					<Icon name="chevron-left" />
 				</button>
-				<span class="min-w-16 text-center text-pf-muted tabular-nums">
+				<span class="min-w-16 text-center text-pf-island-muted tabular-nums">
 					{(frame?.index ?? 0) + 1} of {prototype.frames.length}
 				</span>
 				<button
@@ -266,7 +266,7 @@
 			</nav>
 
 			{#if prototype.flows.length}
-				<Menu label="Flows" align="end" class="pf-tool gap-1.5 px-2">
+				<Menu label="Flows" align="end" class="pf-tool gap-1.5 px-3">
 					{#snippet trigger()}
 						<span class="max-w-48 truncate">{flow?.title ?? 'Flows'}</span>
 						<Icon name="chevron-down" size={14} />
@@ -298,7 +298,7 @@
 				>
 					<Icon name="comment" />
 					{#if comments.unreadCount && !commenting}
-						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment ring-2 ring-pf-surface"></span>
+						<span class="absolute top-1 right-1 size-2 rounded-full bg-pf-comment"></span>
 					{/if}
 				</button>
 			{/if}
@@ -315,7 +315,7 @@
 				</button>
 			{/if}
 
-			<Menu label="Jump to a frame" align="end" class="pf-tool gap-1.5 px-2">
+			<Menu label="Jump to a frame" align="end" class="pf-tool gap-1.5 px-3">
 				{#snippet trigger()}
 					<span>Frames</span>
 					<Icon name="chevron-down" size={14} />
@@ -338,7 +338,7 @@
 				{/snippet}
 			</Menu>
 
-			<Menu label="Scale" align="end" class="pf-tool gap-1.5 px-2">
+			<Menu label="Scale" align="end" class="pf-tool gap-1.5 px-3">
 				{#snippet trigger()}
 					<span class="tabular-nums">{Math.round(view.scale * 100)}%</span>
 					<Icon name="chevron-down" size={14} />

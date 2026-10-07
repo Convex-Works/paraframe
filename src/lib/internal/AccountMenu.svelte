@@ -5,7 +5,6 @@
 	import Menu from './Menu.svelte';
 	import MenuItem from './MenuItem.svelte';
 
-	let { tone = 'light' }: { tone?: 'light' | 'dark' } = $props();
 	const auth = useAuth();
 </script>
 
@@ -25,7 +24,7 @@
 			{/snippet}
 		</Menu>
 	{:else}
-		<button type="button" class={['rounded-full px-3 text-[13px] font-medium', tone === 'dark' ? 'pf-tool' : 'pf-tool-light']}
+		<button type="button" class="pf-tool px-3.5 font-medium"
 			disabled={auth.loading || auth.busy} aria-label="Sign in to paraframe" onclick={() => auth.signIn()}>
 			{auth.loading ? 'Connecting…' : auth.busy ? 'Redirecting…' : 'Sign in'}
 		</button>
