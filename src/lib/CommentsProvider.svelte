@@ -17,6 +17,13 @@
 	setComments(comments);
 
 	onMount(() => comments.start());
+
+	// An image dropped anywhere but a comment field would make the browser open it, losing the view.
+	function guard(event: DragEvent) {
+		if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+	}
 </script>
+
+<svelte:window ondragover={guard} ondrop={guard} />
 
 {@render children()}

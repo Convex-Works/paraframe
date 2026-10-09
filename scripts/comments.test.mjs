@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -93,6 +93,100 @@ test('rejects invalid frames, positions and bodies', async () => {
  assert.equal((await post({ frame: 'overview', x: 1, y: 1, body: 'x'.repeat(5001) })).status, 413);
 });
 
+test('a thread keeps the element its pin was placed on', async () => {
+ const { call } = setup();
+ const anchor = {
+  selector: 'body > main > button:nth-of-type(2)', label: 'button “Add prompts”', text: 'Add prompts',
+  x: 100.04, y: 40, width: 96, height: 32, extra: 'dropped'
+ };
+ const created = await call('/comments/threads', {
+  as: 'ada', method: 'POST', body: { frame: 'overview', x: 120, y: 48, anchor, body: 'Rename this' }
+ });
+ assert.equal(created.status, 201);
+ assert.deepEqual(created.body.thread.anchor, {
+  selector: anchor.selector, label: anchor.label, text: anchor.text, x: 100, y: 40, width: 96, height: 32
+ });
+ const open = await call('/comments/threads', {
+  as: 'ada', method: 'POST', body: { frame: 'overview', x: 10, y: 10, body: 'Anywhere' }
+ });
+ assert.equal(open.body.thread.anchor, null);
+ const invalid = await call('/comments/threads', {
+  as: 'ada', method: 'POST', body: { frame: 'overview', x: 10, y: 10, anchor: { label: 'button' }, body: 'Bad' }
+ });
+ assert.equal(invalid.status, 400);
+});
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
+
+async function upload(server, as, bytes, type = 'image/png', query = '?width=40&height=30') {
+ const url = new URL(`/comments/images${query}`, origin);
+ const request = new Request(url, {
+  method: 'POST', headers: { 'x-test-user': as, origin, 'content-type': type }, body: bytes
+ });
+ const response = await server.handle({ request, url });
+ return { status: response.status, body: await response.json() };
+}
+
+async function image(server, as, id) {
+ const url = new URL(`/comments/images/${id}`, origin);
+ const response = await server.handle({ request: new Request(url, { headers: as ? { 'x-test-user': as } : {} }), url });
+ return { status: response.status, headers: response.headers, bytes: response.ok ? new Uint8Array(await response.arrayBuffer()) : null };
+}
+
+test('images upload first, then belong to the comment they are sent with', async () => {
+ const { server, call } = setup();
+ const uploaded = await upload(server, 'ada', PNG);
+ assert.equal(uploaded.status, 201);
+ assert.deepEqual(uploaded.body.image, { id: 1, width: 40, height: 30 });
+ // Until it is sent, only its uploader can see it.
+ assert.equal((await image(server, 'ben', 1)).status, 404);
+ assert.equal((await image(server, 'ada', 1)).status, 200);
+
+ const created = await call('/comments/threads', {
+  as: 'ada', method: 'POST', body: { frame: 'overview', x: 1, y: 1, images: [1] }
+ });
+ assert.equal(created.status, 201);
+ assert.equal(created.body.thread.comments[0].body, '');
+ assert.deepEqual(created.body.thread.comments[0].images, [{ id: 1, width: 40, height: 30 }]);
+
+ const read = await image(server, 'ben', 1);
+ assert.equal(read.status, 200);
+ assert.deepEqual(read.bytes, PNG);
+ assert.equal(read.headers.get('content-type'), 'image/png');
+ assert.equal(read.headers.get('x-content-type-options'), 'nosniff');
+ assert.equal((await image(server, undefined, 1)).status, 401);
+
+ // Someone else's upload, or one already sent, cannot be attached again.
+ const stolen = await call('/comments/threads/1/comments', { as: 'ben', method: 'POST', body: { images: [1] } });
+ assert.equal(stolen.status, 400);
+});
+
+test('editing a comment can drop its images, and deleting it deletes them', async () => {
+ const { server, call } = setup();
+ await upload(server, 'ada', PNG);
+ await upload(server, 'ada', PNG);
+ await call('/comments/threads', { as: 'ada', method: 'POST', body: { frame: 'overview', x: 1, y: 1, body: 'Two', images: [1, 2] } });
+ const edited = await call('/comments/comments/1', { as: 'ada', method: 'PATCH', body: { body: 'One', images: [2] } });
+ assert.deepEqual(edited.body.thread.comments[0].images.map((i) => i.id), [2]);
+ assert.equal((await image(server, 'ada', 1)).status, 404);
+ const emptied = await call('/comments/comments/1', { as: 'ada', method: 'PATCH', body: { body: '', images: [] } });
+ assert.equal(emptied.status, 400);
+ await call('/comments/comments/1', { as: 'ada', method: 'DELETE' });
+ assert.equal((await image(server, 'ada', 2)).status, 404);
+});
+
+test('only real PNG, JPEG, GIF and WebP images are accepted', async () => {
+ const { server } = setup();
+ const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+ assert.equal((await upload(server, 'ada', svg, 'image/svg+xml')).status, 415);
+ assert.equal((await upload(server, 'ada', svg, 'image/png')).status, 415);
+ assert.equal((await upload(server, 'ada', PNG, 'image/png', '?width=0&height=30')).status, 400);
+ assert.equal((await upload(server, undefined, PNG)).status, 401);
+ const big = new Uint8Array(10 * 1024 * 1024 + 1);
+ big.set(PNG);
+ assert.equal((await upload(server, 'ada', big)).status, 413);
+});
+
 test('replies mark the thread unread for others and reopen a resolved thread', async () => {
  const { call, start } = setup();
  await start();
@@ -161,6 +255,53 @@ test('threads persist in the SQLite file across restarts', async () => {
   const list = await second.call('/comments', { as: 'ben' });
   assert.equal(list.body.threads[0].comments[0].body, 'Tighten this heading');
   second.server.close();
+ } finally {
+  rmSync(dir, { recursive: true, force: true });
+ }
+});
+
+test('a reload reuses the open database, and a reload naming another one is refused', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'paraframe-reload-'));
+ try {
+  const first = setup({ database: join(dir, 'comments.sqlite'), path: '/reload' });
+  const post = (server) => server.call('/reload/threads', { as: 'ada', method: 'POST', body: { frame: 'overview', x: 1, y: 1, body: 'Kept' } });
+  assert.equal((await post(first)).status, 201);
+  // Module reloads in development make new instances with the same settings.
+  const again = setup({ database: join(dir, 'comments.sqlite'), path: '/reload' });
+  assert.equal(again.server.store, first.server.store);
+  assert.equal((await again.call('/reload', { as: 'ben' })).body.threads.length, 1);
+  // Another database for the same endpoint, e.g. changed environment: refused, not switched.
+  const moved = setup({ database: join(dir, 'other.sqlite'), path: '/reload' });
+  const refused = await moved.call('/reload', { as: 'ben' });
+  assert.equal(refused.status, 503);
+  assert.match(refused.body.error, /changed from .*comments\.sqlite to .*other\.sqlite/);
+  assert.equal((await post(moved)).status, 503);
+  first.server.close();
+ } finally {
+  rmSync(dir, { recursive: true, force: true });
+ }
+});
+
+test('a database file deleted or replaced while open is refused, not written to', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'paraframe-gone-'));
+ try {
+  const database = join(dir, 'comments.sqlite');
+  const { server, call } = setup({ database, path: '/gone' });
+  const post = () => call('/gone/threads', { as: 'ada', method: 'POST', body: { frame: 'overview', x: 1, y: 1, body: 'Hello' } });
+  assert.equal((await post()).status, 201);
+  copyFileSync(database, join(dir, 'copy.sqlite'));
+
+  // Replaced, as by a restore over a running server.
+  renameSync(join(dir, 'copy.sqlite'), database);
+  const replaced = await post();
+  assert.equal(replaced.status, 503);
+  assert.match(replaced.body.error, /deleted or replaced/);
+
+  // Deleted.
+  rmSync(database);
+  assert.equal((await post()).status, 503);
+  assert.equal((await call('/gone', { as: 'ada' })).status, 503);
+  server.close();
  } finally {
   rmSync(dir, { recursive: true, force: true });
  }

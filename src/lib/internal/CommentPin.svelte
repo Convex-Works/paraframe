@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import Avatar from './Avatar.svelte';
+	import { commentText } from './comment-text.js';
 	import { ago } from './time.js';
 	import type { CommentThread } from '../comments.js';
 
@@ -19,6 +20,7 @@
 
 	const SIZE = 32;
 	const root = $derived(thread.comments[0]);
+	const text = $derived(commentText(root));
 	const replies = $derived(thread.comments.length - 1);
 
 	let hovered = $state(false);
@@ -47,7 +49,7 @@
 		: expanded
 			? '0 4px 18px rgb(0 0 0 / 0.22)'
 			: '0 1px 4px rgb(0 0 0 / 0.3)'}
-	aria-label="Comment #{thread.id} by {root.author.name}: {root.body}"
+	aria-label="Comment #{thread.id} by {root.author.name}: {text}"
 	aria-expanded={open}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
@@ -71,7 +73,7 @@
 			<span class="font-medium">{root.author.name}</span>
 			<span class="ml-1 text-pf-muted">{ago(root.createdAt, now)}</span>
 		</span>
-		<span class="line-clamp-2 block break-words whitespace-pre-line">{root.body}</span>
+		<span class="line-clamp-2 block break-words whitespace-pre-line">{text}</span>
 		{#if replies > 0}
 			<span class="mt-0.5 block text-xs text-pf-muted">{replies} {replies === 1 ? 'reply' : 'replies'}</span>
 		{/if}

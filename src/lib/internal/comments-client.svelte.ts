@@ -1,4 +1,4 @@
-import type { Comment, CommentAuthor, CommentFilters, CommentThread, CommentsSnapshot } from '../comments.js';
+import type { Comment, CommentAnchor, CommentAuthor, CommentFilters, CommentImage, CommentThread, CommentsSnapshot } from '../comments.js';
 
 type Result = { thread?: CommentThread; deleted?: number };
 
@@ -159,27 +159,46 @@ export class CommentsClient {
 		if (thread?.unread) void this.markRead(thread.id, true);
 	}
 
-	async create(frame: string, x: number, y: number, body: string): Promise<CommentThread> {
-		const { thread } = await this.request('POST', '/threads', { frame, x, y, body });
+	imageUrl(image: CommentImage) {
+		return `${this.path}/images/${image.id}`;
+	}
+
+	/** Uploads an image for a comment being written. Send its id with the comment. */
+	async upload(file: Blob, width: number, height: number): Promise<CommentImage> {
+		const response = await fetch(`${this.path}/images?width=${width}&height=${height}`, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': file.type },
+			body: file
+		});
+		const result = await response.json().catch(() => ({}));
+		if (!response.ok) {
+			throw new Error(result.error ?? (response.status === 413 ? 'This image is too large.' : 'The image could not be uploaded.'));
+		}
+		return result.image as CommentImage;
+	}
+
+	async create(frame: string, x: number, y: number, body: string, anchor?: CommentAnchor, images: CommentImage[] = []): Promise<CommentThread> {
+		const { thread } = await this.request('POST', '/threads', { frame, x, y, anchor, body, images: images.map((i) => i.id) });
 		this.apply({ thread });
 		return thread!;
 	}
 
 	/** Shows the reply at once; throws if it could not be sent. */
-	async reply(threadId: number, body: string) {
+	async reply(threadId: number, body: string, images: CommentImage[] = []) {
 		const pending: Comment = {
-			id: this.nextPending--, author: this.viewer!, body, createdAt: Date.now(), editedAt: null, pending: true
+			id: this.nextPending--, author: this.viewer!, body, images, createdAt: Date.now(), editedAt: null, pending: true
 		};
 		this.update(threadId, (t) => ({ ...t, resolvedAt: null, resolvedBy: null, comments: [...t.comments, pending] }));
 		try {
-			await this.run(() => this.request('POST', `/threads/${threadId}/comments`, { body }), true);
+			await this.run(() => this.request('POST', `/threads/${threadId}/comments`, { body, images: images.map((i) => i.id) }), true);
 		} finally {
 			this.update(threadId, (t) => ({ ...t, comments: t.comments.filter((c) => c.id !== pending.id) }));
 		}
 	}
 
-	async edit(commentId: number, body: string) {
-		await this.run(() => this.request('PATCH', `/comments/${commentId}`, { body }), true);
+	async edit(commentId: number, body: string, images: CommentImage[]) {
+		await this.run(() => this.request('PATCH', `/comments/${commentId}`, { body, images: images.map((i) => i.id) }), true);
 	}
 
 	async removeComment(commentId: number) {

@@ -8,6 +8,8 @@ export { useAuth, type AuthPaths, type AuthUser, type AuthState, type ParaframeA
 export {
 	useComments,
 	type Comment,
+	type CommentAnchor,
+	type CommentImage,
 	type CommentAuthor,
 	type CommentFilters,
 	type CommentThread,

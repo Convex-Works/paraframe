@@ -126,6 +126,7 @@
 	<iframe
 		{@attach trackFrame}
 		data-pf-canvas
+		data-pf-frame={frame.id}
 		data-pf-ready={ready}
 		{src}
 		title={frame.title}

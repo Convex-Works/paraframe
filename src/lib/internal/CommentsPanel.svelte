@@ -8,6 +8,7 @@
 	import Menu from './Menu.svelte';
 	import MenuItem from './MenuItem.svelte';
 	import { threadLink } from './comment-links.js';
+	import { commentText } from './comment-text.js';
 	import { ago, fullDate } from './time.js';
 	import type { Prototype } from '../types.js';
 
@@ -132,7 +133,7 @@
 						<span class="font-medium">{root.author.name}</span>
 						<time class="ml-1 text-pf-muted" title={fullDate(root.createdAt)}>{ago(root.createdAt, comments.now)}</time>
 					</p>
-					<p class={['line-clamp-3 break-words whitespace-pre-line', thread.unread && 'font-medium']}>{root.body}</p>
+					<p class={['line-clamp-3 break-words whitespace-pre-line', thread.unread && 'font-medium']}>{commentText(root)}</p>
 					{#if replies > 0}
 						<p class="mt-1 text-xs text-pf-muted">
 							{replies} {replies === 1 ? 'reply' : 'replies'}

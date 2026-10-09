@@ -183,6 +183,26 @@ button) to enter comment mode in the canvas or player:
 
 - Click a frame to drop a pin and write the first comment. Enter sends,
   Shift+Enter starts a new line, Escape cancels.
+- Near an element, the pin is pulled onto it and the element is outlined,
+  like a tablet pointer over a button. The comment cursor (drawn, not a
+  system cursor) becomes a faint dot, joined to the outline by a neck that
+  thins as it stretches while the pointer is outside the element. Under the pointer, the innermost
+  element that means something wins: a control, image or chart, a heading,
+  paragraph, cell or other text, then a group or a visible box. Wrappers
+  that only lay things out are skipped, and compact controls (up to
+  480 × 56 px) take in their icon and text. A smaller element within 14
+  screen pixels pulls the pointer onto it if it sits inside the element
+  under the pointer. Open space, and anything covering more than 60% of the
+  frame, takes a free pin. Hold Alt (Option) to place a free pin anywhere.
+- The new comment names its element ("On cell “1” in “Search
+  results”"). ⌥↑ or the up arrow widens it to the element around it, ⌥↓
+  narrows it back, and × pins to the point instead. The thread stores the
+  element's label, visible text, a CSS selector and its box (`anchor`), and
+  outlines that box while the thread is open. Pins do not follow an element
+  that later moves.
+- Frames can mark something to comment on as a whole, and name it, with
+  `data-pf-comment="Name"`. Elements are found only in live frames: on the
+  canvas, frames still shown as preview images take free pins.
 - Pins show on frames at all times, with the author's avatar. Hovering grows a pin into a preview of the
   first comment; clicking opens the thread to reply, resolve, edit or delete.
 - The comments panel lists every thread with search, sort (date or frame),
@@ -191,9 +211,28 @@ button) to enter comment mode in the canvas or player:
   switches frames.
 - "Copy link" gives a canvas URL ending `#comment-<id>` that opens the thread.
 - Other viewers' changes arrive live over server-sent events.
+- Images can be dropped on any comment field, or pasted into it: PNG,
+  JPEG, GIF or WebP, up to 10 MB each and six per comment. They upload at
+  once and show as thumbnails; a comment can be images alone. In the thread
+  they show under the text, and open full size in a new tab. Edit a comment
+  to remove one. Images are stored in the same SQLite file (`images` table)
+  and served at `<path>/images/<id>` to whoever can read comments. Uploads
+  never sent with a comment are deleted after a day. The server checks each
+  file's first bytes, never accepts SVG, and serves images with `nosniff` and
+  a sandboxing CSP. Allow request bodies of 10 MB at the comment path:
+  adapter-node's `BODY_SIZE_LIMIT` (512 KB by default) and any proxy in front.
 
 Comments are stored in SQLite through Node's built-in `node:sqlite` (Node
-22.13+ without flags; no native dependency). Add the provider inside
+22.13+ without flags; no native dependency).
+
+Each comment endpoint keeps one database for the life of the server process,
+even across module reloads in development. If its `database` changes while
+the server runs, or the file is deleted or replaced under it, comment
+requests fail with 503 and a message to restart, instead of quietly showing
+other comments or writing to a file no longer on disk. Read `database` from
+the process environment (`process.env`), not SvelteKit's `$app/env/private`:
+in development SvelteKit shares the latter between dev servers through a
+generated file. Add the provider inside
 `AuthProvider`:
 
 ```svelte

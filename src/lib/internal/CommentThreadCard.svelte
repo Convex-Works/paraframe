@@ -120,16 +120,40 @@
 								variant="edit"
 								placeholder="Edit comment"
 								initial={comment.body}
+								initialImages={comment.images}
 								autofocus
-								onsubmit={async (body) => {
-									await comments.edit(comment.id, body);
+								onsubmit={async (body, images) => {
+									await comments.edit(comment.id, body, images);
 									editing = undefined;
 								}}
 								oncancel={() => (editing = undefined)}
 							/>
 						</div>
 					{:else}
-						<p class="break-words whitespace-pre-wrap">{comment.body}</p>
+						{#if comment.body}<p class="break-words whitespace-pre-wrap">{comment.body}</p>{/if}
+						{#if comment.images.length}
+							{@const several = comment.images.length > 1}
+							<div class={['mt-1.5 grid gap-1.5', several && 'grid-cols-2']}>
+								{#each comment.images as image, i (image.id)}
+									<a
+										href={comments.imageUrl(image)}
+										target="_blank"
+										rel="noopener"
+										title="Open full size"
+										class="block overflow-hidden rounded-lg border border-pf-line/70 bg-pf-surface hover:border-pf-line"
+									>
+										<img
+											src={comments.imageUrl(image)}
+											alt="Image {i + 1}"
+											width={image.width}
+											height={image.height}
+											loading="lazy"
+											class={['block w-full', several ? 'aspect-square object-cover' : 'h-auto max-h-64 object-contain']}
+										/>
+									</a>
+								{/each}
+							</div>
+						{/if}
 					{/if}
 				</div>
 			</li>
@@ -141,7 +165,7 @@
 			<Avatar user={viewer} size={24} class="mt-[3px]" />
 			<div class="min-w-0 flex-1">
 				{#key thread.id}
-					<CommentComposer placeholder="Reply" autofocus onsubmit={(body) => comments.reply(thread.id, body)} oncancel={onclose} />
+					<CommentComposer placeholder="Reply" autofocus onsubmit={(body, images) => comments.reply(thread.id, body, images)} oncancel={onclose} />
 				{/key}
 			</div>
 		</footer>

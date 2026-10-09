@@ -6,6 +6,7 @@
 		'chevron-left': 'M15 6l-6 6 6 6',
 		'chevron-right': 'M9 6l6 6-6 6',
 		'chevron-down': 'M6 9l6 6 6-6',
+		'chevron-up': 'M6 15l6-6 6 6',
 		play: 'M7 5l12 7-12 7z',
 		external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
 		restart: 'M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4',

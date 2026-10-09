@@ -14,6 +14,8 @@
 	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
 	import CommentsPanel from './internal/CommentsPanel.svelte';
 	import { linkedThread } from './internal/comment-links.js';
+	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
+	import { aimAt, frameDocument, MAGNET } from './internal/comment-target.js';
 	import { createCanvasLoadQueue } from './internal/canvas-load-queue.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
@@ -260,7 +262,7 @@
 	});
 
 	// The canvas point under the pointer.
-	function toCanvas(event: MouseEvent) {
+	function toCanvas(event: { clientX: number; clientY: number }) {
 		const rect = viewport!.getBoundingClientRect();
 		return {
 			x: (event.clientX - rect.left - camera.x) / camera.z,
@@ -268,7 +270,7 @@
 		};
 	}
 
-	function hit(event: MouseEvent): Frame | undefined {
+	function hit(event: { clientX: number; clientY: number }): Frame | undefined {
 		if (!viewport) return undefined;
 		const { x, y } = toCanvas(event);
 		for (const [id, b] of layout.frames) {
@@ -286,11 +288,31 @@
 		}
 	}
 
+	// Where a click would pin, pulled onto the element near the pointer once the
+	// frame is live (not an image preview). Alt pins anywhere.
+	function aimFor(pointer: Pointer) {
+		const frame = hit(pointer);
+		const box = frame && layout.frames.get(frame.id);
+		if (!frame || !box) return undefined;
+		const { x, y } = toCanvas(pointer);
+		const iframe = pointer.altKey ? null : viewport?.querySelector(`iframe[data-pf-frame="${CSS.escape(frame.id)}"]`);
+		return aimAt(frame.id, x - box.x, y - box.y, frameDocument(iframe, frame.id), MAGNET / camera.z);
+	}
+
+	const aimer = new CommentAimer((pointer) =>
+		commenting && !panning && !draft && comments?.openId === undefined ? aimFor(pointer) : undefined
+	);
+
+	$effect(() => {
+		void [camera.x, camera.y, camera.z, commenting, panning, draft, comments?.openId];
+		aimer.update();
+	});
+
 	// In comment mode a click starts a thread on the frame under it. A click away
 	// from an open thread closes it first, as does Escape.
 	function placeComment(event: MouseEvent) {
 		if (!comments) return;
-		if (draft?.text.trim()) {
+		if (draft?.text.trim() || draft?.images) {
 			commentLayer?.focusDraft();
 			return;
 		}
@@ -298,14 +320,8 @@
 			comments.openThread(undefined);
 			return;
 		}
-		const frame = hit(event);
-		const box = frame && layout.frames.get(frame.id);
-		if (!frame || !box) {
-			draft = undefined;
-			return;
-		}
-		const { x, y } = toCanvas(event);
-		draft = { frame: frame.id, x: x - box.x, y: y - box.y, text: '' };
+		const aim = aimFor(event);
+		draft = aim && { ...aim, text: '' };
 	}
 
 	// Pans and zooms to a thread's frame unless its pin is already in view, then opens it.
@@ -355,6 +371,7 @@
 	function onpointermove(event: PointerEvent) {
 		if (!drag) {
 			hovered = commenting ? undefined : hit(event)?.id;
+			aimer.move((event.target as Element).closest('[data-pf-ui]') ? undefined : event);
 			return;
 		}
 		const dx = event.clientX - drag.sx;
@@ -377,6 +394,8 @@
 		}
 		drag = undefined;
 		panning = false;
+		// The pointer moved while the view was panning; draw the comment cursor where it is now.
+		aimer.move((event.target as Element).closest('[data-pf-ui]') ? undefined : event);
 	}
 
 	function ondblclick(event: MouseEvent) {
@@ -418,6 +437,7 @@
 	}
 
 	function onkeydown(event: KeyboardEvent) {
+		aimer.key(event);
 		if (isEditable(event.target) || document.querySelector(':popover-open')) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		const actions: Record<string, () => void> = {
@@ -487,7 +507,7 @@
 	const selectedFrame = $derived(selected ? prototype.get(selected) : undefined);
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window {onkeydown} onkeyup={(event) => aimer.key(event)} />
 
 <div class="pf-root relative flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar absolute inset-x-3 top-3 z-20">
@@ -585,13 +605,16 @@
 		{onpointermove}
 		{onpointerup}
 		onpointercancel={onpointerup}
-		onpointerleave={() => (hovered = undefined)}
+		onpointerleave={() => {
+			hovered = undefined;
+			aimer.move(undefined);
+		}}
 		{ondblclick}
 		role="application"
 		aria-label="Canvas of all frames"
 		class={[
 			'relative min-h-0 flex-1 touch-none overflow-hidden select-none',
-			panning ? 'cursor-grabbing' : commenting && 'pf-comment-cursor'
+			panning ? 'cursor-grabbing' : commenting && (aimer.cursor ? 'cursor-none' : 'pf-comment-cursor')
 		]}
 		style:background-image="radial-gradient(circle, var(--pf-grid) 1px, transparent 1.4px)"
 		style:background-size="{grid.size}px {grid.size}px"
@@ -634,6 +657,7 @@
 							{:else}
 								<iframe
 									data-pf-canvas
+									data-pf-frame={frame.id}
 									src={prototype.paths.frame(frame.id)}
 									title={frame.title}
 									tabindex="-1"
@@ -737,6 +761,8 @@
 					bind:this={commentLayer}
 					bind:draft
 					{prototype}
+					aim={aimer.aim}
+					cursor={commenting && !panning ? aimer.cursor : undefined}
 					place={placePin}
 					bounds={{ left: 0, top: TOOLBAR_HEIGHT, right: width - rightInset, bottom: height }}
 				/>

@@ -10,6 +10,8 @@
 	import AccountMenu from './internal/AccountMenu.svelte';
 	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
 	import CommentsPanel from './internal/CommentsPanel.svelte';
+	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
+	import { aimAt, frameDocument, MAGNET } from './internal/comment-target.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
@@ -47,6 +49,7 @@
 	let commentLayer = $state<CommentLayer>();
 	let stage = $state<HTMLElement>();
 	let sheet = $state<HTMLElement>();
+	let catcher = $state<HTMLElement>();
 	let scroll = $state(0);
 
 	const view = $derived.by(() => {
@@ -124,6 +127,8 @@
 	function setCommenting(on: boolean) {
 		if (!comments) return;
 		comments.active = on;
+		// The click catcher appears or goes under a still pointer; wait for it to move.
+		aimer.move(undefined);
 		if (!on) {
 			draft = undefined;
 			comments.openThread(undefined);
@@ -135,10 +140,34 @@
 		if (draft && draft.frame !== frameId) untrack(() => (draft = undefined));
 	});
 
+	// Where a click would pin, pulled onto the element near the pointer. Alt pins anywhere.
+	function aimFor(pointer: Pointer) {
+		if (!frame || !catcher) return undefined;
+		const rect = catcher.getBoundingClientRect();
+		const top = slots.at(-1);
+		const iframe = !pointer.altKey && top?.id === frame.id && top.ready ? iframes.get(top.key) : undefined;
+		return aimAt(
+			frame.id,
+			(pointer.clientX - rect.left) / view.scale,
+			(pointer.clientY - rect.top) / view.scale,
+			frameDocument(iframe, frame.id),
+			MAGNET / view.scale
+		);
+	}
+
+	const aimer = new CommentAimer((pointer) =>
+		commenting && !draft && comments?.openId === undefined ? aimFor(pointer) : undefined
+	);
+
+	$effect(() => {
+		void [view, scroll, frame, slots.at(-1)?.ready, commenting, draft, comments?.openId];
+		aimer.update();
+	});
+
 	// In comment mode a click on the frame starts a thread; a click away from an open thread closes it.
 	function placeComment(event: MouseEvent) {
 		if (!comments || !frame) return;
-		if (draft?.text.trim()) {
+		if (draft?.text.trim() || draft?.images) {
 			commentLayer?.focusDraft();
 			return;
 		}
@@ -146,13 +175,8 @@
 			comments.openThread(undefined);
 			return;
 		}
-		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		draft = {
-			frame: frame.id,
-			x: (event.clientX - rect.left) / view.scale,
-			y: (event.clientY - rect.top) / view.scale,
-			text: ''
-		};
+		const aim = aimFor(event);
+		draft = aim && { ...aim, text: '' };
 	}
 
 	function focusThread(thread: CommentThread) {
@@ -177,6 +201,7 @@
 	});
 
 	function onkeydown(event: KeyboardEvent) {
+		aimer.key(event);
 		if (event.key === 'Escape' && comments && !isEditable(event.target) && !document.querySelector(':popover-open')) {
 			if (draft) draft = undefined;
 			else if (comments.openId !== undefined) comments.openThread(undefined);
@@ -216,7 +241,7 @@
 	}
 </script>
 
-<svelte:window {onkeydown} {onmessage} />
+<svelte:window {onkeydown} onkeyup={(event) => aimer.key(event)} {onmessage} />
 
 <div class="pf-root flex h-dvh flex-col bg-pf-stage font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar z-20 m-3 mb-0 shrink-0">
@@ -411,12 +436,21 @@
 				{#if commenting}
 					<!-- Catches clicks meant for a new comment before they reach the frame. -->
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<div class="pf-comment-cursor absolute inset-0" role="presentation" onclick={placeComment}></div>
+					<div
+						bind:this={catcher}
+						class={['absolute inset-0', aimer.cursor ? 'cursor-none' : 'pf-comment-cursor']}
+						role="presentation"
+						onclick={placeComment}
+						onpointermove={(event) => aimer.move(event)}
+						onpointerleave={() => aimer.move(undefined)}
+					></div>
 				{/if}
 				<CommentLayer
 					bind:this={commentLayer}
 					bind:draft
 					{prototype}
+					aim={aimer.aim}
+					cursor={commenting ? aimer.cursor : undefined}
 					place={(id, x, y) => (id === frame.id ? { left: x * view.scale, top: y * view.scale } : undefined)}
 					bounds={commentBounds}
 				/>
