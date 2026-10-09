@@ -288,15 +288,19 @@
 		}
 	}
 
+	/** A frame's document while it is live (not an image preview) and loaded. */
+	function documentOf(id: string) {
+		return frameDocument(viewport?.querySelector(`iframe[data-pf-frame="${CSS.escape(id)}"]`), id);
+	}
+
 	// Where a click would pin, pulled onto the element near the pointer once the
-	// frame is live (not an image preview). Alt pins anywhere.
+	// frame is live. Alt pins anywhere.
 	function aimFor(pointer: Pointer) {
 		const frame = hit(pointer);
 		const box = frame && layout.frames.get(frame.id);
 		if (!frame || !box) return undefined;
 		const { x, y } = toCanvas(pointer);
-		const iframe = pointer.altKey ? null : viewport?.querySelector(`iframe[data-pf-frame="${CSS.escape(frame.id)}"]`);
-		return aimAt(frame.id, x - box.x, y - box.y, frameDocument(iframe, frame.id), MAGNET / camera.z);
+		return aimAt(frame.id, x - box.x, y - box.y, pointer.altKey ? undefined : documentOf(frame.id), MAGNET / camera.z);
 	}
 
 	const aimer = new CommentAimer((pointer) =>
@@ -763,6 +767,7 @@
 					{prototype}
 					aim={aimer.aim}
 					cursor={commenting && !panning ? aimer.cursor : undefined}
+					{documentOf}
 					place={placePin}
 					bounds={{ left: 0, top: TOOLBAR_HEIGHT, right: width - rightInset, bottom: height }}
 				/>

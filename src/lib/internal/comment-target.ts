@@ -129,6 +129,85 @@ export function widen(target: CommentTarget): CommentTarget | undefined {
 	return undefined;
 }
 
+/** The element an anchor names in a frame's document, if it is still there and still says the same. */
+export function findAnchor(doc: Document, anchor: CommentAnchor): Element | undefined {
+	let element: Element | null = null;
+	try {
+		element = doc.querySelector(anchor.selector);
+	} catch {
+		return undefined;
+	}
+	if (!element) return undefined;
+	const said = normalize(anchor.text).replace(/…$/, '').slice(0, 40);
+	return !said || normalize(visibleText(element)).startsWith(said) ? element : undefined;
+}
+
+/**
+ * Where a pin on an element is now, in frame pixels: at the same offset into
+ * the element as when it was placed. Hidden while that point is outside the
+ * frame, clipped by a scrolling container, or covered (a sticky header).
+ */
+export function locate(doc: Document, anchor: CommentAnchor, pin: { x: number; y: number }) {
+	const element = findAnchor(doc, anchor);
+	const view = doc.defaultView;
+	if (!element || !view) return undefined;
+	const r = element.getBoundingClientRect();
+	const x = r.left + clamp(pin.x - anchor.x, 1, r.width - 1);
+	const y = r.top + clamp(pin.y - anchor.y, 1, r.height - 1);
+	const box = { x: r.left, y: r.top, width: r.width, height: r.height };
+	const inFrame = r.width > 0 && r.height > 0 && x >= 0 && y >= 0 && x < view.innerWidth && y < view.innerHeight;
+	if (!inFrame || clipped(element, x, y)) return { x, y, box, element, visible: false };
+	const top = doc.elementFromPoint(x, y);
+	// The element itself may not take pointer events (a chart), so its container counts as showing it.
+	const visible = Boolean(top && (top === element || element.contains(top) || top.contains(element)));
+	return { x, y, box, element, visible };
+}
+
+/** Scrolls the frame's containers, not the viewer, until the element is in the middle of them. */
+export function reveal(element: Element) {
+	const view = element.ownerDocument.defaultView;
+	if (!view) return;
+	for (let node = element.parentElement; node; node = node.parentElement) {
+		const style = view.getComputedStyle(node);
+		const scrolls = /auto|scroll/.test(style.overflowX + style.overflowY);
+		if (!scrolls || node === element.ownerDocument.body) continue;
+		const outer = node.getBoundingClientRect();
+		const r = element.getBoundingClientRect();
+		if (r.top < outer.top || r.bottom > outer.bottom) node.scrollTop += r.top - outer.top - (outer.height - r.height) / 2;
+		if (r.left < outer.left || r.right > outer.right) node.scrollLeft += r.left - outer.left - (outer.width - r.width) / 2;
+	}
+	const r = element.getBoundingClientRect();
+	if (r.top < 0 || r.bottom > view.innerHeight) view.scrollBy(0, r.top - (view.innerHeight - r.height) / 2);
+}
+
+/** The scrolling container under the point that can still scroll, to pass wheel turns to. */
+export function scrollerAt(doc: Document, x: number, y: number, dx: number, dy: number): Element | undefined {
+	const view = doc.defaultView;
+	if (!view) return undefined;
+	for (let node = doc.elementFromPoint(x, y); node; node = node.parentElement) {
+		const style = view.getComputedStyle(node);
+		const root = node === doc.scrollingElement;
+		const canY = (root || /auto|scroll/.test(style.overflowY)) && node.scrollHeight > node.clientHeight
+			&& (dy < 0 ? node.scrollTop > 0 : node.scrollTop + node.clientHeight < node.scrollHeight - 1);
+		const canX = (root || /auto|scroll/.test(style.overflowX)) && node.scrollWidth > node.clientWidth
+			&& (dx < 0 ? node.scrollLeft > 0 : node.scrollLeft + node.clientWidth < node.scrollWidth - 1);
+		if ((dy && canY) || (dx && canX)) return node;
+	}
+	return undefined;
+}
+
+/** Whether a container that clips its overflow hides this point of the element. */
+function clipped(element: Element, x: number, y: number) {
+	const view = element.ownerDocument.defaultView!;
+	for (let node = element.parentElement; node && node !== element.ownerDocument.body; node = node.parentElement) {
+		const style = view.getComputedStyle(node);
+		if (style.overflowX === 'visible' && style.overflowY === 'visible') continue;
+		const r = node.getBoundingClientRect();
+		if (x < r.left || x > r.right || y < r.top || y > r.bottom) return true;
+	}
+	return false;
+}
+
 /** What a thread stores about its target. */
 export function anchorOf(target: CommentTarget): CommentAnchor {
 	const { box } = target;
@@ -304,6 +383,8 @@ function visibleText(element: Element): string {
 	const text = (element as HTMLElement).innerText ?? element.textContent ?? '';
 	return text.replace(/\s+/g, ' ').trim();
 }
+
+const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
 
 function ownText(element: Element) {
 	for (const node of element.childNodes) if (node.nodeType === 3 && node.textContent?.trim()) return true;

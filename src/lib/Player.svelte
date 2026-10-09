@@ -11,7 +11,7 @@
 	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
 	import CommentsPanel from './internal/CommentsPanel.svelte';
 	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
-	import { aimAt, frameDocument, MAGNET } from './internal/comment-target.js';
+	import { aimAt, frameDocument, MAGNET, scrollerAt } from './internal/comment-target.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
@@ -140,19 +140,43 @@
 		if (draft && draft.frame !== frameId) untrack(() => (draft = undefined));
 	});
 
+	/** The shown frame's document, once it has loaded. */
+	function documentOf(id: string) {
+		const top = slots.at(-1);
+		return top?.id === id && top.ready ? frameDocument(iframes.get(top.key), id) : undefined;
+	}
+
 	// Where a click would pin, pulled onto the element near the pointer. Alt pins anywhere.
 	function aimFor(pointer: Pointer) {
 		if (!frame || !catcher) return undefined;
 		const rect = catcher.getBoundingClientRect();
-		const top = slots.at(-1);
-		const iframe = !pointer.altKey && top?.id === frame.id && top.ready ? iframes.get(top.key) : undefined;
 		return aimAt(
 			frame.id,
 			(pointer.clientX - rect.left) / view.scale,
 			(pointer.clientY - rect.top) / view.scale,
-			frameDocument(iframe, frame.id),
+			pointer.altKey ? undefined : documentOf(frame.id),
 			MAGNET / view.scale
 		);
+	}
+
+	// The click catcher covers the frame in comment mode; pass wheel turns to
+	// whatever scrolls inside the frame under the pointer, so long pages and
+	// tables can still be read. Otherwise the stage scrolls as usual.
+	function forwardWheel(node: HTMLElement) {
+		const onwheel = (event: WheelEvent) => {
+			const doc = frame && documentOf(frame.id);
+			if (!doc) return;
+			const rect = node.getBoundingClientRect();
+			const unit = event.deltaMode === 1 ? 16 : 1;
+			const dx = (event.deltaX * unit) / view.scale;
+			const dy = (event.deltaY * unit) / view.scale;
+			const scroller = scrollerAt(doc, (event.clientX - rect.left) / view.scale, (event.clientY - rect.top) / view.scale, dx, dy);
+			if (!scroller) return;
+			event.preventDefault();
+			scroller.scrollBy(dx, dy);
+		};
+		node.addEventListener('wheel', onwheel, { passive: false });
+		return () => node.removeEventListener('wheel', onwheel);
 	}
 
 	const aimer = new CommentAimer((pointer) =>
@@ -224,7 +248,9 @@
 		// Only the frame on top may navigate; a frame still fading out may not.
 		else if (key === slots.at(-1)?.key) {
 			if (message.type === 'paraframe:navigate') show(message.to);
-			else handleKey(message.key);
+			else if (message.type === 'paraframe:key') handleKey(message.key);
+			// The frame scrolled under a still pointer: aim again.
+			else aimer.update();
 		}
 	}
 
@@ -438,6 +464,7 @@
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
 						bind:this={catcher}
+						{@attach forwardWheel}
 						class={['absolute inset-0', aimer.cursor ? 'cursor-none' : 'pf-comment-cursor']}
 						role="presentation"
 						onclick={placeComment}
@@ -451,6 +478,7 @@
 					{prototype}
 					aim={aimer.aim}
 					cursor={commenting ? aimer.cursor : undefined}
+					{documentOf}
 					place={(id, x, y) => (id === frame.id ? { left: x * view.scale, top: y * view.scale } : undefined)}
 					bounds={commentBounds}
 				/>

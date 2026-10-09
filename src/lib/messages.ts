@@ -6,9 +6,11 @@ export type FrameMessage =
 	/** A link in the frame was followed. */
 	| { type: 'paraframe:navigate'; to: string }
 	/** A navigation key was pressed while the frame had focus. */
-	| { type: 'paraframe:key'; key: string };
+	| { type: 'paraframe:key'; key: string }
+	/** The frame scrolled, resized or changed, so pins on its elements move. */
+	| { type: 'paraframe:layout'; frame: string };
 
-const TYPES = new Set(['paraframe:ready', 'paraframe:navigate', 'paraframe:key']);
+const TYPES = new Set(['paraframe:ready', 'paraframe:navigate', 'paraframe:key', 'paraframe:layout']);
 
 export function isFrameMessage(data: unknown): data is FrameMessage {
 	return (

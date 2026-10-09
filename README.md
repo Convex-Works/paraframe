@@ -198,8 +198,18 @@ button) to enter comment mode in the canvas or player:
   results”"). ⌥↑ or the up arrow widens it to the element around it, ⌥↓
   narrows it back, and × pins to the point instead. The thread stores the
   element's label, visible text, a CSS selector and its box (`anchor`), and
-  outlines that box while the thread is open. Pins do not follow an element
-  that later moves.
+  outlines that box while the thread is open.
+- In a live frame, a pin on an element follows it as the frame scrolls or
+  changes, and hides while the element is out of view: scrolled away,
+  clipped by a scrolling container, or under something (a sticky header).
+  Opening its thread scrolls the element back into view. Frames report
+  scrolls and changes to the viewer (`paraframe:layout`), so nothing polls.
+  If the element can no longer be found (its selector or text changed), the
+  pin hides and the thread opens from the comments panel at its saved spot.
+  Free pins, and pins on image previews, stay where they were placed.
+- In comment mode the player passes wheel turns to whatever scrolls inside
+  the frame under the pointer, so long pages and tables can be read and
+  commented on.
 - Frames can mark something to comment on as a whole, and name it, with
   `data-pf-comment="Name"`. Elements are found only in live frames: on the
   canvas, frames still shown as preview images take free pins.

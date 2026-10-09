@@ -97,7 +97,26 @@
 			: host?.hasAttribute('data-pf-canvas')
 				? 'canvas'
 				: 'standalone';
-		return () => clearTimeout(hintTimer);
+		if (mode === 'standalone') return () => clearTimeout(hintTimer);
+
+		// Tell the viewer when anything may have moved, at most once per animation
+		// frame, so comment pins on elements follow them.
+		let request = 0;
+		const changed = () => {
+			cancelAnimationFrame(request);
+			request = requestAnimationFrame(() => postToHost({ type: 'paraframe:layout', frame: frame.id }));
+		};
+		const observer = new MutationObserver(changed);
+		observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+		document.addEventListener('scroll', changed, { capture: true, passive: true });
+		window.addEventListener('resize', changed);
+		return () => {
+			clearTimeout(hintTimer);
+			cancelAnimationFrame(request);
+			observer.disconnect();
+			document.removeEventListener('scroll', changed, { capture: true });
+			window.removeEventListener('resize', changed);
+		};
 	});
 
 	$effect(() => {

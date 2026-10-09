@@ -25,14 +25,16 @@
 </script>
 
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import { useAuth } from '../auth.js';
-	import { useComments, type CommentImage } from '../comments.js';
+	import { useComments, type CommentImage, type CommentThread } from '../comments.js';
+	import { isFrameMessage } from '../messages.js';
 	import CommentComposer from './CommentComposer.svelte';
 	import CommentPin from './CommentPin.svelte';
 	import CommentThreadCard from './CommentThreadCard.svelte';
 	import Icon from './Icon.svelte';
 	import { threadLink } from './comment-links.js';
-	import { anchorOf, MAGNET, widen } from './comment-target.js';
+	import { anchorOf, locate, MAGNET, reveal, widen } from './comment-target.js';
 	import { neck } from './metaball.js';
 	import type { Prototype } from '../types.js';
 
@@ -42,6 +44,7 @@
 		bounds,
 		aim,
 		cursor,
+		documentOf,
 		draft = $bindable()
 	}: {
 		prototype: Prototype;
@@ -55,6 +58,8 @@
 		 * comment cursor is drawn here instead, so it can fade out over an element.
 		 */
 		cursor?: { x: number; y: number };
+		/** A frame's live document, if loaded, so pins on its elements follow them. */
+		documentOf?: (frame: string) => Document | undefined;
 		draft?: CommentDraft;
 	} = $props();
 
@@ -85,9 +90,56 @@
 		return place(frame, Math.min(x, size.width), Math.min(y, size.height));
 	}
 
+	// Bumped when a frame reports that it scrolled, resized or changed.
+	let layout = $state(0);
+	onMount(() => {
+		const onmessage = (event: MessageEvent) => {
+			if (event.origin !== location.origin || !isFrameMessage(event.data)) return;
+			if (event.data.type === 'paraframe:layout' || event.data.type === 'paraframe:ready') layout++;
+		};
+		window.addEventListener('message', onmessage);
+		return () => window.removeEventListener('message', onmessage);
+	});
+
+	/**
+	 * Where a thread's pin is now, in frame pixels. A pin on an element moves
+	 * with it and hides while it is out of view; a free pin, or one on a frame
+	 * not loaded live (an image preview), stays where it was placed.
+	 */
+	function spot(thread: CommentThread) {
+		void layout;
+		const doc = thread.anchor ? documentOf?.(thread.frame) : undefined;
+		if (!doc || !thread.anchor) return { x: thread.x, y: thread.y, hidden: false };
+		const found = locate(doc, thread.anchor, thread);
+		// Gone from a live frame (another tab, filtered out): not in view either.
+		if (!found) return { x: thread.x, y: thread.y, hidden: true };
+		return { x: found.x, y: found.y, box: found.box, element: found.element, hidden: !found.visible };
+	}
+
+	// Opening a thread scrolls its element into view inside the frame, once the frame has loaded.
+	let revealing = $state<number>();
+	$effect(() => {
+		revealing = comments.openId;
+	});
+	$effect(() => {
+		void layout;
+		const id = revealing;
+		if (id === undefined) return;
+		untrack(() => {
+			const thread = comments.threads.find((t) => t.id === id);
+			if (!thread?.anchor) return void (revealing = undefined);
+			if (!documentOf?.(thread.frame)) return;
+			const where = spot(thread);
+			if (where.element && where.hidden) reveal(where.element);
+			revealing = undefined;
+		});
+	});
+
 	const margin = 48;
 	const pins = $derived(comments.pinned.flatMap((thread) => {
-		const at = anchor(thread.frame, thread.x, thread.y);
+		const where = spot(thread);
+		if (where.hidden) return [];
+		const at = anchor(thread.frame, where.x, where.y);
 		if (!at || at.left < bounds.left - margin || at.left > bounds.right + margin
 			|| at.top < bounds.top - margin || at.top > bounds.bottom + margin) return [];
 		return [{ thread, ...at }];
@@ -104,8 +156,9 @@
 
 	const open = $derived.by(() => {
 		const thread = comments.open;
-		const at = thread && anchor(thread.frame, thread.x, thread.y);
-		return thread && at ? { thread, at, card: beside(at, CARD_WIDTH, cardHeight) } : undefined;
+		const where = thread && spot(thread);
+		const at = thread && where && anchor(thread.frame, where.x, where.y);
+		return thread && where && at ? { thread, where, at, card: beside(at, CARD_WIDTH, cardHeight) } : undefined;
 	});
 
 	/** A frame box in this layer's pixels, with a little room around it. */
@@ -156,9 +209,20 @@
 		return { ...cursor, neck: neck(cursor.x, cursor.y, DOT, box, MAGNET + 8) };
 	});
 
-	const drafted = $derived(draft?.target && outline(draft.frame, draft.target.box, draft.target.radius));
+	/** The new comment's element where it is now, following any scroll since the click. */
+	const draftBox = $derived.by(() => {
+		void layout;
+		const target = draft?.target;
+		if (!target) return undefined;
+		if (!target.element.isConnected) return target.box;
+		const r = target.element.getBoundingClientRect();
+		return { x: r.left, y: r.top, width: r.width, height: r.height };
+	});
+	const drafted = $derived(draft?.target && draftBox && outline(draft.frame, draftBox, draft.target.radius));
 	const wider = $derived(draft?.target && widen(draft.target));
-	const anchored = $derived(open?.thread.anchor && outline(open.thread.frame, open.thread.anchor));
+	const anchored = $derived(
+		open?.thread.anchor && !open.where.hidden && outline(open.thread.frame, open.where.box ?? open.thread.anchor)
+	);
 	/** The new comment's element, or else the open thread's. */
 	const marked = $derived(drafted || (draft ? undefined : anchored));
 
@@ -196,7 +260,10 @@
 	}
 
 	const pending = $derived.by(() => {
-		const at = draft && anchor(draft.frame, draft.x, draft.y);
+		const box = draft?.target && draftBox;
+		const x = draft && (box ? box.x + draft.x - draft.target!.box.x : draft.x);
+		const y = draft && (box ? box.y + draft.y - draft.target!.box.y : draft.y);
+		const at = draft && anchor(draft.frame, x!, y!);
 		return at ? { at, card: beside({ left: at.left, top: at.top + 4 }, COMPOSER_WIDTH, 40) } : undefined;
 	});
 
