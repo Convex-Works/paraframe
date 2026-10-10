@@ -1,7 +1,24 @@
 <!--
   A thread's marker. Its bottom-left point sits on the spot that was clicked.
-  On hover it grows from that point into a preview of the first comment.
+  On hover it grows from that point into a preview of the first comment. It
+  pops out of that point when it appears (loaded, added, scrolled into view)
+  and shrinks back into it when it goes.
 -->
+<script lang="ts" module>
+	import { backOut, cubicIn } from 'svelte/easing';
+
+	/** Scales from the pin's point (its bottom-left corner), keeping its lift above it. */
+	function pop(_node: Element, { duration, easing }: { duration: number; easing: (t: number) => number }) {
+		const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		return {
+			duration: still ? 0 : duration,
+			easing,
+			css: (t: number) =>
+				`transform-origin: 0 100%; transform: translateY(-100%) scale(${0.2 + 0.8 * t}); opacity: ${Math.min(1, t * 2)}`
+		};
+	}
+</script>
+
 <script lang="ts">
 	import Avatar from './Avatar.svelte';
 	import { commentText } from './comment-text.js';
@@ -51,6 +68,8 @@
 			: '0 1px 4px rgb(0 0 0 / 0.3)'}
 	aria-label="Comment #{thread.id} by {root.author.name}: {text}"
 	aria-expanded={open}
+	in:pop={{ duration: 240, easing: backOut }}
+	out:pop={{ duration: 140, easing: cubicIn }}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
 	onfocus={() => (focused = true)}

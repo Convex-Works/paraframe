@@ -213,7 +213,9 @@ button) to enter comment mode in the canvas or player:
 - Frames can mark something to comment on as a whole, and name it, with
   `data-pf-comment="Name"`. Elements are found only in live frames: on the
   canvas, frames still shown as preview images take free pins.
-- Pins show on frames at all times, with the author's avatar. Hovering grows a pin into a preview of the
+- Pins show on frames at all times, with the author's avatar. They pop out
+  of the point they mark when they appear and shrink back into it when they
+  go (none of that with reduced motion). Hovering grows a pin into a preview of the
   first comment; clicking opens the thread to reply, resolve, edit or delete.
 - The comments panel lists every thread with search, sort (date or frame),
   resolved and "only your threads" filters, and unread markers. Choosing a
