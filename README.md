@@ -6,7 +6,9 @@ views around them:
 
 - **Canvas.** Every frame laid out in sections on a board you can pan and
   zoom. Frames where a flow starts carry a tag that plays the flow.
-  Double-click a frame to play it.
+  Hover live frames to inspect tooltips and hover states. Clicking and scrolling
+  inside a frame are reserved for the player or standalone frame view; canvas
+  gestures select, pan and zoom the board. Double-click a frame to play it.
 - **Player.** One frame at a time, scaled to the window. Links inside frames
   move between frames. Arrow keys step through frames in reading order, and
   named flows give you starting points.
@@ -79,6 +81,7 @@ Run `pnpm showcase` to open it.
 
 Pass an optional `preview` function to use images at overview scale, switching
 nearby frames to live iframes when zooming beyond the image's resolution.
+Hovering a thumbnail also loads its live frame so hover states work at any zoom.
 Selection, navigation and the interactive player work the same way:
 
 ```svelte
@@ -98,12 +101,13 @@ at any capture resolution; 2× screenshots automatically switch at twice the zoo
 of 1× screenshots. Live frames load only within 96 CSS pixels of the viewport.
 Startup waits until pan and zoom have been idle for 50 ms, then loads one frame
 at a time with a 50 ms gap after readiness. New gestures pause pending starts;
-off-screen or below-threshold frames leave the queue. A frame that never reports
-ready releases its queue slot after five seconds so other previews can load.
+off-screen frames and unhovered frames below the threshold leave the queue.
+A frame that never reports ready releases its queue slot after five seconds
+so other previews can load.
 They fade over their thumbnail after load and the frame's ready message, return
-to images 15% below the switch point, and are destroyed after fading out. This
-hysteresis avoids reloading around the boundary. Failed live loads leave the
-thumbnail visible; failed thumbnails fall back to a live frame.
+to images 15% below the switch point once unhovered, and are destroyed after
+fading out. This hysteresis avoids reloading around the boundary. Failed live
+loads leave the thumbnail visible; failed thumbnails fall back to a live frame.
 
 ## OIDC authentication
 

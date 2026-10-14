@@ -17,6 +17,7 @@
 	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
 	import { aimAt, frameDocument, MAGNET } from './internal/comment-target.js';
 	import { createCanvasLoadQueue } from './internal/canvas-load-queue.js';
+	import { canvasFrame } from './internal/canvas-frame.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
@@ -382,6 +383,7 @@
 		const dy = event.clientY - drag.sy;
 		if (!drag.moved && Math.hypot(dx, dy) < 4) return;
 		drag.moved = true;
+		hovered = undefined;
 		panning = true;
 		camera.x = drag.x + dx;
 		camera.y = drag.y + dy;
@@ -416,6 +418,7 @@
 			if (scroller && !event.ctrlKey && !event.metaKey && scroller.scrollHeight > scroller.clientHeight) return;
 			event.preventDefault();
 			stopAnimation();
+			hovered = undefined;
 			const unit = event.deltaMode === 1 ? 16 : 1;
 			if (event.ctrlKey || event.metaKey) {
 				const rect = node.getBoundingClientRect();
@@ -656,16 +659,18 @@
 									preview={preview(frame)}
 									{pixelScale}
 									nearViewport={nearViewport(b)}
+									hovered={hovered === frame.id && !panning}
 									scheduleLoad={loadQueue.request}
 								/>
 							{:else}
 								<iframe
+									{@attach canvasFrame}
 									data-pf-canvas
 									data-pf-frame={frame.id}
 									src={prototype.paths.frame(frame.id)}
 									title={frame.title}
 									tabindex="-1"
-									class="pointer-events-none size-full border-0"
+									class="pointer-events-none size-full border-0 data-[pf-hover=true]:pointer-events-auto"
 								></iframe>
 							{/if}
 						{/if}

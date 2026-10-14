@@ -3,6 +3,7 @@
 	import { isFrameMessage } from '../messages.js';
 	import type { Frame } from '../types.js';
 	import type { ScheduleFrameLoad } from './canvas-load-queue.js';
+	import { canvasFrame } from './canvas-frame.js';
 
 	let {
 		frame,
@@ -10,6 +11,7 @@
 		preview,
 		pixelScale,
 		nearViewport,
+		hovered,
 		scheduleLoad
 	}: {
 		frame: Frame;
@@ -18,6 +20,7 @@
 		/** Device pixels per canvas CSS pixel, including canvas and browser zoom. */
 		pixelScale: number;
 		nearViewport: boolean;
+		hovered: boolean;
 		scheduleLoad: ScheduleFrameLoad;
 	} = $props();
 
@@ -40,9 +43,11 @@
 	$effect(() => {
 		const nearby = nearViewport;
 		const ratio = sampling;
+		const hovering = hovered;
 		untrack(() => {
-			if (!nearby || ratio <= RETURN_TO_IMAGE) live = false;
-			else if (ratio >= 1) live = true;
+			if (!nearby) live = false;
+			else if (hovering || ratio >= 1) live = true;
+			else if (ratio <= RETURN_TO_IMAGE) live = false;
 		});
 	});
 
@@ -125,6 +130,7 @@
 {#if mounted}
 	<iframe
 		{@attach trackFrame}
+		{@attach canvasFrame}
 		data-pf-canvas
 		data-pf-frame={frame.id}
 		data-pf-ready={ready}
@@ -132,7 +138,8 @@
 		title={frame.title}
 		tabindex="-1"
 		aria-hidden="true"
-		class="pointer-events-none absolute inset-0 size-full border-0"
+		class="pointer-events-none absolute inset-0 size-full border-0 data-[pf-hover=true]:pointer-events-auto"
+		style:pointer-events={live && ready ? undefined : 'none'}
 		style:opacity={live && ready ? 1 : 0}
 		style:transition="opacity {FADE_MS}ms ease"
 	></iframe>
