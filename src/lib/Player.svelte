@@ -6,17 +6,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
+	import type { CommentThread } from 'visual-comments';
 	import Icon from './internal/Icon.svelte';
-	import AccountMenu from './internal/AccountMenu.svelte';
-	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
-	import CommentsPanel from './internal/CommentsPanel.svelte';
-	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
-	import { aimAt, frameDocument, MAGNET, scrollerAt } from './internal/comment-target.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable, isFrameMessage, PLAYER_KEYS } from './messages.js';
-	import { useComments, type CommentThread } from './comments.js';
+	import { describeFrame, useCommentsHolder } from './comments.js';
 	import type { Flow, Prototype } from './types.js';
 
 	let { prototype, frameId }: { prototype: Prototype; frameId: string } = $props();
@@ -43,14 +39,9 @@
 
 	const flow = $derived(prototype.flows.find((f) => f.id === flowId));
 
-	const comments = useComments();
+	const holder = useCommentsHolder();
+	const comments = $derived(holder?.current);
 	const commenting = $derived(comments?.active ?? false);
-	let draft = $state<CommentDraft>();
-	let commentLayer = $state<CommentLayer>();
-	let stage = $state<HTMLElement>();
-	let sheet = $state<HTMLElement>();
-	let catcher = $state<HTMLElement>();
-	let scroll = $state(0);
 
 	const view = $derived.by(() => {
 		const { width, height } = frame?.size ?? prototype.size;
@@ -121,117 +112,24 @@
 		if (key === 'ArrowRight') show(prototype.next(frameId)?.id);
 		else if (key === 'ArrowLeft') show(prototype.prev(frameId)?.id);
 		else if ((key === 'r' || key === 'R') && flow) restart();
-		else if (key === 'c' || key === 'C') setCommenting(!commenting);
 	}
 
-	function setCommenting(on: boolean) {
-		if (!comments) return;
-		comments.active = on;
-		// The click catcher appears or goes under a still pointer; wait for it to move.
-		aimer.move(undefined);
-		if (!on) {
-			draft = undefined;
-			comments.openThread(undefined);
-		}
-	}
-
-	// Leaving a frame discards an empty new comment on it.
+	// While the player is shown, a thread opened from the list or a link shows its frame.
 	$effect(() => {
-		if (draft && draft.frame !== frameId) untrack(() => (draft = undefined));
-	});
-
-	/** The shown frame's document, once it has loaded. */
-	function documentOf(id: string) {
-		const top = slots.at(-1);
-		return top?.id === id && top.ready ? frameDocument(iframes.get(top.key), id) : undefined;
-	}
-
-	// Where a click would pin, pulled onto the element near the pointer. Alt pins anywhere.
-	function aimFor(pointer: Pointer) {
-		if (!frame || !catcher) return undefined;
-		const rect = catcher.getBoundingClientRect();
-		return aimAt(
-			frame.id,
-			(pointer.clientX - rect.left) / view.scale,
-			(pointer.clientY - rect.top) / view.scale,
-			pointer.altKey ? undefined : documentOf(frame.id),
-			MAGNET / view.scale
-		);
-	}
-
-	// The click catcher covers the frame in comment mode; pass wheel turns to
-	// whatever scrolls inside the frame under the pointer, so long pages and
-	// tables can still be read. Otherwise the stage scrolls as usual.
-	function forwardWheel(node: HTMLElement) {
-		const onwheel = (event: WheelEvent) => {
-			const doc = frame && documentOf(frame.id);
-			if (!doc) return;
-			const rect = node.getBoundingClientRect();
-			const unit = event.deltaMode === 1 ? 16 : 1;
-			const dx = (event.deltaX * unit) / view.scale;
-			const dy = (event.deltaY * unit) / view.scale;
-			const scroller = scrollerAt(doc, (event.clientX - rect.left) / view.scale, (event.clientY - rect.top) / view.scale, dx, dy);
-			if (!scroller) return;
-			event.preventDefault();
-			scroller.scrollBy(dx, dy);
-		};
-		node.addEventListener('wheel', onwheel, { passive: false });
-		return () => node.removeEventListener('wheel', onwheel);
-	}
-
-	const aimer = new CommentAimer((pointer) =>
-		commenting && !draft && comments?.openId === undefined ? aimFor(pointer) : undefined
-	);
-
-	$effect(() => {
-		void [view, scroll, frame, slots.at(-1)?.ready, commenting, draft, comments?.openId];
-		aimer.update();
-	});
-
-	// In comment mode a click on the frame starts a thread; a click away from an open thread closes it.
-	function placeComment(event: MouseEvent) {
-		if (!comments || !frame) return;
-		if (draft?.text.trim() || draft?.images) {
-			commentLayer?.focusDraft();
-			return;
-		}
-		if (comments.openId !== undefined) {
-			comments.openThread(undefined);
-			return;
-		}
-		const aim = aimFor(event);
-		draft = aim && { ...aim, text: '' };
-	}
-
-	function focusThread(thread: CommentThread) {
-		if (!comments) return;
-		draft = undefined;
-		comments.openThread(thread.id);
-		if (thread.frame !== frameId) show(thread.frame);
-	}
-
-	// The part of the stage in view, in the frame's own coordinates, so open threads stay on screen.
-	const commentBounds = $derived.by(() => {
-		void [scroll, view, frame, stageWidth, stageHeight];
-		if (!stage || !sheet) return { left: 0, top: 0, right: 0, bottom: 0 };
-		const outer = stage.getBoundingClientRect();
-		const inner = sheet.getBoundingClientRect();
-		return {
-			left: outer.left - inner.left,
-			top: outer.top - inner.top,
-			right: outer.left - inner.left + stageWidth,
-			bottom: outer.top - inner.top + stageHeight
-		};
+		const current = comments;
+		if (!current) return;
+		current.configure({
+			show: (thread: CommentThread) => {
+				if (!prototype.get(thread.surface)) return false;
+				show(thread.surface);
+				return true;
+			},
+			describe: (id) => describeFrame(prototype, id)
+		});
+		return () => current.configure({ show: undefined });
 	});
 
 	function onkeydown(event: KeyboardEvent) {
-		aimer.key(event);
-		if (event.key === 'Escape' && comments && !isEditable(event.target) && !document.querySelector(':popover-open')) {
-			if (draft) draft = undefined;
-			else if (comments.openId !== undefined) comments.openThread(undefined);
-			else if (commenting) setCommenting(false);
-			return;
-		}
 		if (!PLAYER_KEYS.has(event.key)) return;
 		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target)) return;
 		if (document.querySelector(':popover-open')) return;
@@ -249,8 +147,6 @@
 		else if (key === slots.at(-1)?.key) {
 			if (message.type === 'paraframe:navigate') show(message.to);
 			else if (message.type === 'paraframe:key') handleKey(message.key);
-			// The frame scrolled under a still pointer: aim again.
-			else aimer.update();
 		}
 	}
 
@@ -267,7 +163,7 @@
 	}
 </script>
 
-<svelte:window {onkeydown} onkeyup={(event) => aimer.key(event)} {onmessage} />
+<svelte:window {onkeydown} {onmessage} />
 
 <div class="pf-root flex h-dvh flex-col bg-pf-stage font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar z-20 m-3 mb-0 shrink-0">
@@ -345,7 +241,7 @@
 					aria-pressed={commenting}
 					aria-label="Comments"
 					title="Comments (C)"
-					onclick={() => setCommenting(!commenting)}
+					onclick={() => comments.toggle()}
 				>
 					<Icon name="comment" />
 					{#if comments.unreadCount && !commenting}
@@ -419,32 +315,32 @@
 			>
 				<Icon name="external" />
 			</a>
-			<AccountMenu />
+			{#if comments}<span data-vc-account></span>{/if}
 		</div>
 	</header>
 
 	<div class="flex min-h-0 flex-1">
 	<main
-		bind:this={stage}
 		class="flex min-h-0 flex-1 overflow-auto"
 		bind:clientWidth={stageWidth}
 		bind:clientHeight={stageHeight}
-		onscroll={() => scroll++}
 	>
 		{#if frame}
 			<div
-				bind:this={sheet}
 				class="relative m-auto shrink-0"
 				style:width="{frame.size.width * view.scale}px"
 				style:height="{view.height * view.scale}px"
 			>
 			<div class={['absolute inset-0 overflow-hidden bg-white', scaleMode !== 'width' && 'rounded-md']}>
-				{#each slots as slot (slot.key)}
+				{#each slots as slot, index (slot.key)}
 					{@const shown = prototype.get(slot.id)}
 					{#if shown}
+						<!-- The frame on top takes comments; one still fading out does not. -->
 						<iframe
 							{@attach track(slot.key)}
 							data-pf-player
+							data-vc-surface={index === slots.length - 1 ? slot.id : undefined}
+							data-vc-title={shown.title}
 							allow="clipboard-read; clipboard-write; fullscreen"
 							src={prototype.paths.frame(slot.id)}
 							title={shown.title}
@@ -458,31 +354,6 @@
 					{/if}
 				{/each}
 			</div>
-			{#if comments}
-				{#if commenting}
-					<!-- Catches clicks meant for a new comment before they reach the frame. -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<div
-						bind:this={catcher}
-						{@attach forwardWheel}
-						class={['absolute inset-0', aimer.cursor ? 'cursor-none' : 'pf-comment-cursor']}
-						role="presentation"
-						onclick={placeComment}
-						onpointermove={(event) => aimer.move(event)}
-						onpointerleave={() => aimer.move(undefined)}
-					></div>
-				{/if}
-				<CommentLayer
-					bind:this={commentLayer}
-					bind:draft
-					{prototype}
-					aim={aimer.aim}
-					cursor={commenting ? aimer.cursor : undefined}
-					{documentOf}
-					place={(id, x, y) => (id === frame.id ? { left: x * view.scale, top: y * view.scale } : undefined)}
-					bounds={commentBounds}
-				/>
-			{/if}
 			</div>
 		{:else}
 			<p class="m-auto text-pf-canvas-muted">
@@ -490,13 +361,9 @@
 			</p>
 		{/if}
 	</main>
-	{#if comments && commenting}
-		<CommentsPanel
-			{prototype}
-			class="my-3 mr-3 w-80 shrink-0"
-			onselect={focusThread}
-			onclose={() => setCommenting(false)}
-		/>
+	{#if commenting}
+		<!-- Where the comments put their list, beside the stage. -->
+		<div data-vc-panel class="my-3 mr-3 w-80 shrink-0"></div>
 	{/if}
 	</div>
 </div>

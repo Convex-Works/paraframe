@@ -109,179 +109,53 @@ to images 15% below the switch point once unhovered, and are destroyed after
 fading out. This hysteresis avoids reloading around the boundary. Failed live
 loads leave the thumbnail visible; failed thumbnails fall back to a live frame.
 
-## OIDC authentication
+## Comments
 
-Authentication is optional. Without a provider, paraframe has no account
-controls. With a provider, anyone can still view the prototype; signing in
-shows the teal avatar menu in the canvas and player.
-
-The browser uses same-origin server endpoints and receives user details only:
+Optional. Comments come from a [visual-comments](../visual-comments) server,
+which also signs viewers in; paraframe has no sign-in of its own. Wrap the
+viewer layout in `Comments`:
 
 ```svelte
 <!-- src/routes/(viewer)/+layout.svelte -->
 <script lang="ts">
   import 'paraframe/styles.css';
-  import { AuthProvider } from 'paraframe';
-  import { resolve } from '$app/paths';
+  import { Comments } from 'paraframe';
   let { children } = $props();
 </script>
 
-<AuthProvider paths={{
-  session: `${resolve('')}auth/session`,
-  login: `${resolve('')}auth/login`,
-  logout: `${resolve('')}auth/logout`
-}}>
+<Comments server="https://comments.convex.works" space="my-team">
   {@render children()}
-</AuthProvider>
+</Comments>
 ```
 
-In server-only code, import `ServerOidcAuth` from `paraframe/server` and supply
-`authority`, `clientId`, `clientSecret`, `sessionSecret` and optionally
-`canvasPath` (default `/`). The session secret must be a random value of at
-least 32 characters. Store both secrets in private runtime environment
-variables. `handle(event)` accepts a SvelteKit request event and returns a
-response for login, session, logout and canvas callback requests; it returns
-`undefined` for other requests. The host mounts `auth/[action]/+server.ts` and
-intercepts callback queries at the canvas in `hooks.server.ts`. See the host
-prototype for a complete integration. Set SvelteKit `paths.relative: false`
-when using `resolve` for these endpoints. In a callback hook, throw SvelteKit
-`redirect(303, response.headers.get('location'))` so pending cookies are
-attached to the redirect response.
+The space must list the prototype's origin (see the visual-comments README).
+The canvas and player then show a comment button and the account (avatar or
+Sign in) in their toolbars. Viewers press **C** or the button to enter
+comment mode, and click a frame to pin a thread on the element under the
+pointer. Everything else (pins, threads, replies, images, the list, live
+updates) is visual-comments'.
 
-Use a **confidential client** with authorization code flow and **S256 PKCE**.
-Register the exact absolute canvas URL as both the redirect URL and
-post-logout redirect URL, including its trailing slash and deployment base
-path. Keep the canvas route dynamic so the server can process callbacks.
-Frames and preview images can still be prerendered. This integration requires
-a server adapter; a static-only host cannot perform confidential token
-exchanges.
+paraframe tells visual-comments what it needs in markup:
 
-The default scopes are `openid profile email offline_access`. The server
-validates state, PKCE, nonce, issuer, audience, authorized party, expiry and ID
-token signatures. Pending transactions expire after ten minutes and are
-consumed once. Sessions use authenticated encryption in HttpOnly, SameSite=Lax
-cookies, with Secure enabled on HTTPS. Tokens never enter browser JavaScript
-or storage. The session cookie has a seven-day maximum lifetime; access/ID
-token validity is checked independently and refresh tokens renew on the server.
-Cookies exceeding 3,800 bytes are rejected. Logout requires a same-origin POST,
-clears local cookies, then redirects to the discovered end-session endpoint.
+- Each frame is a surface (`data-vc-surface` with the frame's id and title),
+  and its iframe is the surface's frame (`data-vc-frame`), so pins attach to
+  elements inside frames and comments only go on frames. A frame's
+  document counts once it has hydrated (`data-pf-frame-ready`).
+- The canvas keeps its drag-to-pan in comment mode (`data-vc-gestures`).
+  Pins follow zoom and pan because surfaces are measured on screen.
+- The list goes in a column the canvas and player make room for (`data-vc-panel`).
+- Choosing a thread in the list glides the canvas to its frame, or switches
+  the player to it. Every frame shares one page of threads (`page`, default
+  `prototype`), so the list shows them all, titled and sorted by frame.
 
-Concurrent refreshes are coalesced within one server process. Deploy a single
-Node instance, or add a shared session/refresh store before running multiple
-instances with rotating refresh tokens. Share the encryption key across server
-restarts; rotating it signs existing sessions out.
-
-`useAuth()` exposes the reactive user (`sub`, `name`, `email`, `picture`),
-loading/busy/error state, and `signIn()`, `signOut()` and `clearError()` methods.
-The avatar uses the profile picture when available and otherwise the user's
-first initial. Theme its teal circle with `--pf-avatar`.
+Frames can name something to comment on as a whole with
+`data-vc-target="Name"` (`data-pf-comment` still works). Run the showcase
+with comments against a local server:
 
 ```sh
-pnpm test # OIDC flow, cookie security, renewal and logout; comment storage and endpoints
+# in visual-comments: pnpm dev
+VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase
 ```
-
-## Comments
-
-Optional, like authentication. Viewers press **C** (or the speech-bubble
-button) to enter comment mode in the canvas or player:
-
-- Click a frame to drop a pin and write the first comment. Enter sends,
-  Shift+Enter starts a new line, Escape cancels.
-- Near an element, the pin is pulled onto it and the element is outlined,
-  like a tablet pointer over a button. The comment cursor (drawn, not a
-  system cursor) becomes a faint dot, joined to the outline by a neck that
-  thins as it stretches while the pointer is outside the element. Under the pointer, the innermost
-  element that means something wins: a control, image or chart, a heading,
-  paragraph, cell or other text, then a group or a visible box. Wrappers
-  that only lay things out are skipped, and compact controls (up to
-  480 × 56 px) take in their icon and text. A smaller element within 14
-  screen pixels pulls the pointer onto it if it sits inside the element
-  under the pointer. Open space, and anything covering more than 60% of the
-  frame, takes a free pin. Hold Alt (Option) to place a free pin anywhere.
-- The new comment names its element ("On cell “1” in “Search
-  results”"). ⌥↑ or the up arrow widens it to the element around it, ⌥↓
-  narrows it back, and × pins to the point instead. The thread stores the
-  element's label, visible text, a CSS selector and its box (`anchor`), and
-  outlines that box while the thread is open.
-- In a live frame, a pin on an element follows it as the frame scrolls or
-  changes, and hides while the element is out of view: scrolled away,
-  clipped by a scrolling container, or under something (a sticky header).
-  Opening its thread scrolls the element back into view. Frames report
-  scrolls and changes to the viewer (`paraframe:layout`), so nothing polls.
-  If the element can no longer be found (its selector or text changed), the
-  pin hides and the thread opens from the comments panel at its saved spot.
-  Free pins, and pins on image previews, stay where they were placed.
-- In comment mode the player passes wheel turns to whatever scrolls inside
-  the frame under the pointer, so long pages and tables can be read and
-  commented on.
-- Frames can mark something to comment on as a whole, and name it, with
-  `data-pf-comment="Name"`. Elements are found only in live frames: on the
-  canvas, frames still shown as preview images take free pins.
-- Pins show on frames at all times, with the author's avatar. They pop out
-  of the point they mark when they appear and shrink back into it when they
-  go (none of that with reduced motion). Hovering grows a pin into a preview of the
-  first comment; clicking opens the thread to reply, resolve, edit or delete.
-- The comments panel lists every thread with search, sort (date or frame),
-  resolved and "only your threads" filters, and unread markers. Choosing a
-  thread in the canvas glides the view to its frame; in the player it
-  switches frames.
-- "Copy link" gives a canvas URL ending `#comment-<id>` that opens the thread.
-- Other viewers' changes arrive live over server-sent events.
-- Images can be dropped on any comment field, or pasted into it: PNG,
-  JPEG, GIF or WebP, up to 10 MB each and six per comment. They upload at
-  once and show as thumbnails; a comment can be images alone. In the thread
-  they show under the text, and open full size in a new tab. Edit a comment
-  to remove one. Images are stored in the same SQLite file (`images` table)
-  and served at `<path>/images/<id>` to whoever can read comments. Uploads
-  never sent with a comment are deleted after a day. The server checks each
-  file's first bytes, never accepts SVG, and serves images with `nosniff` and
-  a sandboxing CSP. Allow request bodies of 10 MB at the comment path:
-  adapter-node's `BODY_SIZE_LIMIT` (512 KB by default) and any proxy in front.
-
-Comments are stored in SQLite through Node's built-in `node:sqlite` (Node
-22.13+ without flags; no native dependency).
-
-Each comment endpoint keeps one database for the life of the server process,
-even across module reloads in development. If its `database` changes while
-the server runs, or the file is deleted or replaced under it, comment
-requests fail with 503 and a message to restart, instead of quietly showing
-other comments or writing to a file no longer on disk. Read `database` from
-the process environment (`process.env`), not SvelteKit's `$app/env/private`:
-in development SvelteKit shares the latter between dev servers through a
-generated file. Add the provider inside
-`AuthProvider`:
-
-```svelte
-<AuthProvider paths={…}>
-  <CommentsProvider path="{resolve('')}comments">
-    {@render children()}
-  </CommentsProvider>
-</AuthProvider>
-```
-
-and mount the server endpoints at that path:
-
-```ts
-// src/lib/server/comments.ts
-import { ServerComments } from 'paraframe/server';
-export const comments = new ServerComments<RequestEvent>({
-  database: 'data/comments.sqlite', // created on first request
-  path: '/comments',
-  user: (event) => auth.user(event)  // ServerOidcAuth, or any { sub, name, picture? } | null
-});
-
-// src/routes/comments/[...path]/+server.ts  (GET, POST, PATCH, DELETE)
-const handle: RequestHandler = async (event) =>
-  await comments.handle(event) ?? new Response('Not found', { status: 404 });
-```
-
-Reading and writing require a user by default; pass `public: true` to let
-signed-out viewers read. Writes require a same-origin JSON request. Anyone
-signed in can reply and resolve; only authors edit or delete their comments,
-and deleting a thread's first comment deletes the thread. Pins are stored in
-frame pixels, so they stay put at any zoom. Read state is per user. Live
-updates are in-process: serve a single Node instance, as for authentication.
-Theme the comment blue with `--pf-comment` and `--pf-comment-soft`.
 
 ## Linking frames
 
@@ -317,7 +191,8 @@ clicks inside the frame (a selectable table row, say), add
 ## Theming
 
 Override the `--pf-*` custom properties (see `src/lib/styles.css`) after
-importing `paraframe/styles.css`.
+importing `paraframe/styles.css`. Comments take `--pf-comment`,
+`--pf-comment-soft`, `--pf-avatar` and `--pf-font`.
 
 ## Develop
 

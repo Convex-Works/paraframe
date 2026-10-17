@@ -5,24 +5,19 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { CommentThread } from 'visual-comments';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { devicePixelRatio } from 'svelte/reactivity/window';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import Icon from './internal/Icon.svelte';
-	import AccountMenu from './internal/AccountMenu.svelte';
 	import CanvasPreview from './internal/CanvasPreview.svelte';
-	import CommentLayer, { type CommentDraft } from './internal/CommentLayer.svelte';
-	import CommentsPanel from './internal/CommentsPanel.svelte';
-	import { linkedThread } from './internal/comment-links.js';
-	import { CommentAimer, type Pointer } from './internal/comment-aim.svelte.js';
-	import { aimAt, frameDocument, MAGNET } from './internal/comment-target.js';
 	import { createCanvasLoadQueue } from './internal/canvas-load-queue.js';
 	import { canvasFrame } from './internal/canvas-frame.js';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable } from './messages.js';
-	import { useComments, type CommentThread } from './comments.js';
+	import { describeFrame, useCommentsHolder } from './comments.js';
 	import type { Flow, Frame, Prototype, Section } from './types.js';
 
 	let {
@@ -99,11 +94,10 @@
 	let hovered = $state<string | undefined>();
 	let panning = $state(false);
 	let pageScale = $state(1);
-	const comments = useComments();
+	const holder = useCommentsHolder();
+	const comments = $derived(holder?.current);
 	const commenting = $derived(comments?.active ?? false);
 	const rightInset = $derived(commenting ? PANEL_INSET : 0);
-	let draft = $state<CommentDraft>();
-	let commentLayer = $state<CommentLayer>();
 	const pixelScale = $derived(camera.z * (devicePixelRatio.current ?? 1) * pageScale);
 	const loadQueue = createCanvasLoadQueue();
 
@@ -280,87 +274,24 @@
 		return undefined;
 	}
 
-	function setCommenting(on: boolean) {
-		if (!comments) return;
-		comments.active = on;
-		if (!on) {
-			draft = undefined;
-			comments.openThread(undefined);
-		}
-	}
-
-	/** A frame's document while it is live (not an image preview) and loaded. */
-	function documentOf(id: string) {
-		return frameDocument(viewport?.querySelector(`iframe[data-pf-frame="${CSS.escape(id)}"]`), id);
-	}
-
-	// Where a click would pin, pulled onto the element near the pointer once the
-	// frame is live. Alt pins anywhere.
-	function aimFor(pointer: Pointer) {
-		const frame = hit(pointer);
-		const box = frame && layout.frames.get(frame.id);
-		if (!frame || !box) return undefined;
-		const { x, y } = toCanvas(pointer);
-		return aimAt(frame.id, x - box.x, y - box.y, pointer.altKey ? undefined : documentOf(frame.id), MAGNET / camera.z);
-	}
-
-	const aimer = new CommentAimer((pointer) =>
-		commenting && !panning && !draft && comments?.openId === undefined ? aimFor(pointer) : undefined
-	);
-
-	$effect(() => {
-		void [camera.x, camera.y, camera.z, commenting, panning, draft, comments?.openId];
-		aimer.update();
-	});
-
-	// In comment mode a click starts a thread on the frame under it. A click away
-	// from an open thread closes it first, as does Escape.
-	function placeComment(event: MouseEvent) {
-		if (!comments) return;
-		if (draft?.text.trim() || draft?.images) {
-			commentLayer?.focusDraft();
-			return;
-		}
-		if (comments.openId !== undefined) {
-			comments.openThread(undefined);
-			return;
-		}
-		const aim = aimFor(event);
-		draft = aim && { ...aim, text: '' };
-	}
-
-	// Pans and zooms to a thread's frame unless its pin is already in view, then opens it.
-	function focusThread(thread: CommentThread) {
-		if (!comments) return;
-		draft = undefined;
-		comments.active = true;
-		comments.openThread(thread.id);
-		const box = layout.frames.get(thread.frame);
-		if (!box) return;
+	// Pans and zooms to a thread's frame unless its pin is already in view.
+	function showThread(thread: CommentThread) {
+		const box = layout.frames.get(thread.surface);
+		if (!box) return false;
 		const target = fitCamera(box, 72, Math.max(camera.z, 1));
-		const pin = placePin(thread.frame, thread.x, thread.y);
-		const inView = pin && pin.left > 40 && pin.left < width - rightInset - 360
+		const pin = { left: (box.x + thread.x) * camera.z + camera.x, top: (box.y + thread.y) * camera.z + camera.y };
+		const inView = pin.left > 40 && pin.left < width - rightInset - 360
 			&& pin.top > TOOLBAR_HEIGHT + 40 && pin.top < height - 40;
 		if (!inView || camera.z < target.z * 0.5) animateTo(target);
+		return true;
 	}
 
-	function placePin(frame: string, x: number, y: number) {
-		const b = layout.frames.get(frame);
-		if (!b) return undefined;
-		return { left: (b.x + x) * camera.z + camera.x, top: (b.y + y) * camera.z + camera.y };
-	}
-
-	// Open a shared link to a thread once comments have loaded.
-	let linked = $state<number>();
+	// While the canvas is shown, threads opened from the list or a link move the camera to their frame.
 	$effect(() => {
-		if (!comments || linked === undefined || comments.loading || !ready) return;
-		const thread = comments.threads.find((t) => t.id === linked);
-		linked = undefined;
-		replaceState(`${location.pathname}${location.search}`, {});
-		if (thread) {
-			comments.filters.showResolved ||= Boolean(thread.resolvedAt);
-			focusThread(thread);
-		}
+		const current = comments;
+		if (!current) return;
+		current.configure({ show: showThread, describe: (id) => describeFrame(prototype, id) });
+		return () => current.configure({ show: undefined });
 	});
 
 	let drag: { sx: number; sy: number; x: number; y: number; moved: boolean } | undefined;
@@ -376,7 +307,6 @@
 	function onpointermove(event: PointerEvent) {
 		if (!drag) {
 			hovered = commenting ? undefined : hit(event)?.id;
-			aimer.move((event.target as Element).closest('[data-pf-ui]') ? undefined : event);
 			return;
 		}
 		const dx = event.clientX - drag.sx;
@@ -392,16 +322,10 @@
 	function onpointerup(event: PointerEvent) {
 		if (!drag) return;
 		if (drag.moved) persist();
-		else if (event.button === 0 && commenting) placeComment(event);
-		else if (event.button === 0) {
-			// Outside comment mode a click away from an open thread just closes it.
-			if (comments?.openId !== undefined) comments.openThread(undefined);
-			select(hit(event)?.id);
-		}
+		// In comment mode a click is the comments' to handle.
+		else if (event.button === 0 && !commenting) select(hit(event)?.id);
 		drag = undefined;
 		panning = false;
-		// The pointer moved while the view was panning; draw the comment cursor where it is now.
-		aimer.move((event.target as Element).closest('[data-pf-ui]') ? undefined : event);
 	}
 
 	function ondblclick(event: MouseEvent) {
@@ -444,7 +368,6 @@
 	}
 
 	function onkeydown(event: KeyboardEvent) {
-		aimer.key(event);
 		if (isEditable(event.target) || document.querySelector(':popover-open')) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		const actions: Record<string, () => void> = {
@@ -457,12 +380,9 @@
 			Minus: () => zoomAt(0.8),
 			NumpadSubtract: () => zoomAt(0.8),
 			Enter: () => selected && play(selected),
-			KeyC: () => setCommenting(!commenting),
 			Escape: () => {
-				if (draft) draft = undefined;
-				else if (comments?.openId !== undefined) comments.openThread(undefined);
-				else if (commenting) setCommenting(false);
-				else select(undefined);
+				// Escape closes comments first; they handle it themselves.
+				if (!commenting && comments?.openId === undefined) select(undefined);
 			},
 			ArrowRight: () => step(1),
 			ArrowLeft: () => step(-1)
@@ -486,7 +406,6 @@
 		if (selected && !prototype.get(selected)) selected = undefined;
 		if (stored) camera = stored;
 		else fit(layout.bounds);
-		linked = linkedThread(location.hash);
 		ready = true;
 		return () => {
 			clearTimeout(persistTimer);
@@ -514,7 +433,7 @@
 	const selectedFrame = $derived(selected ? prototype.get(selected) : undefined);
 </script>
 
-<svelte:window {onkeydown} onkeyup={(event) => aimer.key(event)} />
+<svelte:window {onkeydown} />
 
 <div class="pf-root relative flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-canvas-ink">
 	<header class="pf-toolbar absolute inset-x-3 top-3 z-20">
@@ -581,7 +500,7 @@
 					aria-pressed={commenting}
 					aria-label="Comments"
 					title="Comments (C)"
-					onclick={() => setCommenting(!commenting)}
+					onclick={() => comments.toggle()}
 				>
 					<Icon name="comment" />
 					{#if comments.unreadCount && !commenting}
@@ -599,7 +518,7 @@
 				<Icon name="play" size={14} />
 				Play
 			</button>
-			<AccountMenu />
+			{#if comments}<span data-vc-account></span>{/if}
 		</nav>
 	</header>
 
@@ -612,16 +531,14 @@
 		{onpointermove}
 		{onpointerup}
 		onpointercancel={onpointerup}
-		onpointerleave={() => {
-			hovered = undefined;
-			aimer.move(undefined);
-		}}
+		onpointerleave={() => (hovered = undefined)}
 		{ondblclick}
+		data-vc-gestures="host"
 		role="application"
 		aria-label="Canvas of all frames"
 		class={[
 			'relative min-h-0 flex-1 touch-none overflow-hidden select-none',
-			panning ? 'cursor-grabbing' : commenting && (aimer.cursor ? 'cursor-none' : 'pf-comment-cursor')
+			panning && 'cursor-grabbing'
 		]}
 		style:background-image="radial-gradient(circle, var(--pf-grid) 1px, transparent 1.4px)"
 		style:background-size="{grid.size}px {grid.size}px"
@@ -645,6 +562,8 @@
 				{@const b = layout.frames.get(frame.id)}
 				{#if b}
 					<div
+						data-vc-surface={frame.id}
+						data-vc-title={frame.title}
 						class="absolute overflow-hidden bg-white"
 						style:left="{b.x}px"
 						style:top="{b.y}px"
@@ -667,6 +586,7 @@
 									{@attach canvasFrame}
 									data-pf-canvas
 									data-pf-frame={frame.id}
+									data-vc-frame
 									src={prototype.paths.frame(frame.id)}
 									title={frame.title}
 									tabindex="-1"
@@ -764,28 +684,11 @@
 					{/if}
 				{/if}
 			{/each}
-
-			{#if comments}
-				<CommentLayer
-					bind:this={commentLayer}
-					bind:draft
-					{prototype}
-					aim={aimer.aim}
-					cursor={commenting && !panning ? aimer.cursor : undefined}
-					{documentOf}
-					place={placePin}
-					bounds={{ left: 0, top: TOOLBAR_HEIGHT, right: width - rightInset, bottom: height }}
-				/>
-			{/if}
 		{/if}
 	</div>
 
-	{#if comments && commenting}
-		<CommentsPanel
-			{prototype}
-			class="absolute top-[60px] right-3 bottom-3 z-20 w-80"
-			onselect={focusThread}
-			onclose={() => setCommenting(false)}
-		/>
+	{#if commenting}
+		<!-- Where the comments put their list. -->
+		<div data-vc-panel class="pointer-events-none absolute top-[60px] right-3 bottom-3 w-80"></div>
 	{/if}
 </div>

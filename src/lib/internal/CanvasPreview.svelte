@@ -134,6 +134,7 @@
 		data-pf-canvas
 		data-pf-frame={frame.id}
 		data-pf-ready={ready}
+		data-vc-frame
 		{src}
 		title={frame.title}
 		tabindex="-1"
