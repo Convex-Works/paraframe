@@ -4,6 +4,10 @@
 	"description": "A read-only viewer for navigating and arranging UI frames, in the style of a design tool's prototype preview.",
 	"license": "UNLICENSED",
 	"type": "module",
+	"packageManager": "pnpm@12.4.1",
+	"engines": {
+		"node": ">=22.17"
+	},
 	"scripts": {
 		"dev": "svelte-kit sync && svelte-package --watch",
 		"package": "svelte-kit sync && svelte-package && publint",
@@ -47,6 +51,7 @@
 		"@sveltejs/package": "^3.0.0",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/vite": "^4.3.0",
+		"@types/node": "^26.6.5",
 		"@typescript/native": "npm:typescript@^7.0.2",
 		"publint": "^0.3.21",
 		"svelte": "^5.57.1",
