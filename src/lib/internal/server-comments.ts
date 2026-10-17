@@ -126,6 +126,11 @@ export class ServerComments<E extends CommentsRequest = CommentsRequest> {
 		if (!open) {
 			const store = new CommentStore(this.database);
 			stores.set(this.path, { database: this.database, store });
+			// Closing checkpoints the WAL, so a stopped server leaves all its
+			// comments in the one database file, not in comments.sqlite-wal.
+			process.once('exit', () => {
+				if (stores.get(this.path)?.store === store) store.close();
+			});
 			return store;
 		}
 		if (open.database !== this.database) {

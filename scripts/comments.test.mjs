@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -255,6 +256,28 @@ test('threads persist in the SQLite file across restarts', async () => {
   const list = await second.call('/comments', { as: 'ben' });
   assert.equal(list.body.threads[0].comments[0].body, 'Tighten this heading');
   second.server.close();
+ } finally {
+  rmSync(dir, { recursive: true, force: true });
+ }
+});
+
+test('a server that exits leaves every comment in the database file, not in the WAL', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'paraframe-comments-'));
+ try {
+  const database = join(dir, 'comments.sqlite');
+  const module = new URL('../dist/internal/server-comments.js', import.meta.url).href;
+  execFileSync(process.execPath, ['--input-type=module', '-e', `
+   const { existsSync } = await import('node:fs');
+   const { ServerComments } = await import(${JSON.stringify(module)});
+   const server = new ServerComments({ database: ${JSON.stringify(database)}, path: '/comments', user: () => null });
+   server.store.createThread({ sub: 'user-ada', name: 'Ada', picture: '' }, { frame: 'overview', x: 1, y: 1, body: 'Kept', anchor: null, images: [] });
+   // While open, the write is in the WAL.
+   process.exit(existsSync(${JSON.stringify(`${database}-wal`)}) ? 0 : 2);
+  `], { stdio: 'pipe' });
+  assert.equal(existsSync(`${database}-wal`), false);
+  const reopened = setup({ database, path: '/exited' });
+  assert.equal((await reopened.call('/exited', { as: 'ben' })).body.threads[0].comments[0].body, 'Kept');
+  reopened.server.close();
  } finally {
   rmSync(dir, { recursive: true, force: true });
  }
