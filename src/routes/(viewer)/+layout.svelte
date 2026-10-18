@@ -3,12 +3,12 @@
 	import { Comments } from '#lib';
 	let { children } = $props();
 
-	// `VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase` adds comments, in the server's `demo` space.
-	const server = import.meta.env.VITE_COMMENTS_SERVER as string | undefined;
+	// `VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase` adds comments; see src/hooks.server.ts.
+	const comments = Boolean(import.meta.env.VITE_COMMENTS_SERVER);
 </script>
 
-{#if server}
-	<Comments {server} space={import.meta.env.VITE_COMMENTS_SPACE ?? 'demo'}>
+{#if comments}
+	<Comments>
 		{@render children()}
 	</Comments>
 {:else}

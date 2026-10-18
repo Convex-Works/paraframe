@@ -1,18 +1,19 @@
 <!--
-  Adds comments to the canvas and player inside it, from a visual-comments
-  server. Place it in the viewer layout. Frames are the surfaces that take
-  comments; every frame of the prototype shares one page of threads.
+  Adds comments to the canvas and player inside it. The site's server passes
+  comment requests on to a visual-comments server, and signs viewers in.
+  Place it in the viewer layout. Frames are the surfaces that take comments;
+  every frame of the prototype shares one page of threads.
 -->
 <script lang="ts">
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { createVisualComments, type VisualComments } from 'visual-comments';
 	import { setComments } from './comments.js';
 
-	let { server, space, page = 'prototype', children }: {
-		/** The comment server, e.g. `https://comments.convex.works`. */
-		server: string;
-		/** The space the prototype's threads belong to. */
-		space: string;
+	let { endpoint = '/_comments', auth = '/auth', page = 'prototype', children }: {
+		/** Where the site's server answers comment requests (visual-comments' `commentsProxy`). */
+		endpoint?: string;
+		/** The site's sign-in routes (`@convex-works/sign-in`). */
+		auth?: string;
 		/** The key every frame's threads share. */
 		page?: string;
 		children: Snippet;
@@ -23,7 +24,7 @@
 
 	onMount(() => {
 		const comments = createVisualComments({
-			...untrack(() => ({ server, space, page })),
+			...untrack(() => ({ endpoint, auth, page })),
 			// The canvas and player have their own buttons and keys.
 			toolbar: false,
 			// A frame is ready once it has hydrated, not when its HTML has loaded.

@@ -112,8 +112,22 @@ loads leave the thumbnail visible; failed thumbnails fall back to a live frame.
 ## Comments
 
 Optional. Comments come from a [visual-comments](../visual-comments) server,
-which also signs viewers in; paraframe has no sign-in of its own. Wrap the
-viewer layout in `Comments`:
+through the prototype's own server, which also signs viewers in. In
+`src/hooks.server.ts`, add the sign-in of
+[@convex-works/sign-in](../sign-in) and visual-comments' proxy:
+
+```ts
+import { sequence } from '@sveltejs/kit/hooks';
+import { createSignIn } from '@convex-works/sign-in/server';
+import { commentsProxy } from 'visual-comments/server';
+
+const signIn = createSignIn({ issuer, clientId, clientSecret, secret });
+const comments = commentsProxy({ server: 'https://comments.convex.works', space: 'my-team', secret: spaceSecret });
+
+export const handle = sequence(signIn.sveltekit(), comments.sveltekit());
+```
+
+Then wrap the viewer layout in `Comments`:
 
 ```svelte
 <!-- src/routes/(viewer)/+layout.svelte -->
@@ -123,13 +137,13 @@ viewer layout in `Comments`:
   let { children } = $props();
 </script>
 
-<Comments server="https://comments.convex.works" space="my-team">
+<Comments>
   {@render children()}
 </Comments>
 ```
 
-The space must list the prototype's origin (see the visual-comments README).
-The canvas and player then show a comment button and the account (avatar or
+`Comments` takes `endpoint` (default `/_comments`) and `auth` (default
+`/auth`) when the routes are elsewhere, e.g. under a base path. The canvas and player then show a comment button and the account (avatar or
 Sign in) in their toolbars. Viewers press **C** or the button to enter
 comment mode, and click a frame to pin a thread on the element under the
 pointer. Everything else (pins, threads, replies, images, the list, live
@@ -150,7 +164,7 @@ paraframe tells visual-comments what it needs in markup:
 
 Frames can name something to comment on as a whole with
 `data-vc-target="Name"` (`data-pf-comment` still works). Run the showcase
-with comments against a local server:
+with comments against a local server, with the development sign-in:
 
 ```sh
 # in visual-comments: pnpm dev
