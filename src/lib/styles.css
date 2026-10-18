@@ -25,6 +25,11 @@
 	--pf-avatar: #009aaa;
 	--pf-comment: #0d99ff;
 	--pf-comment-soft: #e5f4ff;
+	/* Comments (visual-comments) take paraframe's colours and font. */
+	--vc-comment: var(--pf-comment);
+	--vc-comment-soft: var(--pf-comment-soft);
+	--vc-avatar: var(--pf-avatar);
+	--vc-font: var(--pf-font);
 	--pf-island: rgb(50 50 50 / 0.57);
 	--pf-island-ink: #fff;
 	--pf-island-muted: rgb(255 255 255 / 0.6);
@@ -77,20 +82,6 @@
 		color: var(--pf-island-ink);
 		pointer-events: auto;
 	}
-	.pf-account {
-		display: inline-flex;
-		height: 2rem;
-		align-items: center;
-		gap: 0.375rem;
-		border-radius: 9999px;
-		padding-right: 0.625rem;
-		color: var(--pf-island-ink);
-		outline: none;
-	}
-	.pf-account:hover,
-	.pf-account[aria-expanded='true'] { background: var(--pf-island-hover); }
-	.pf-account:focus-visible { box-shadow: 0 0 0 2px var(--pf-island-muted); }
-
 	.pf-tool {
 		display: inline-flex;
 		height: 2rem;
@@ -135,10 +126,6 @@
 	}
 	.pf-tool-light:hover {
 		background: var(--pf-wash);
-	}
-	/* The comment tool: a pin whose bottom-left point is the hotspot. */
-	.pf-comment-cursor {
-		cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M14 1.5a12.5 12.5 0 1 1 0 25H1.5V14A12.5 12.5 0 0 1 14 1.5z' fill='white' stroke='%231c1917' stroke-width='1.5'/%3E%3Cpath d='M14 9v10M9 14h10' stroke='%231c1917' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 1 27, crosshair;
 	}
 	.pf-tool-light:focus-visible {
 		box-shadow: 0 0 0 2px var(--pf-accent);

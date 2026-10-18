@@ -6,11 +6,9 @@ export type FrameMessage =
 	/** A link in the frame was followed. */
 	| { type: 'paraframe:navigate'; to: string }
 	/** A navigation key was pressed while the frame had focus. */
-	| { type: 'paraframe:key'; key: string }
-	/** The frame scrolled, resized or changed, so pins on its elements move. */
-	| { type: 'paraframe:layout'; frame: string };
+	| { type: 'paraframe:key'; key: string };
 
-const TYPES = new Set(['paraframe:ready', 'paraframe:navigate', 'paraframe:key', 'paraframe:layout']);
+const TYPES = new Set(['paraframe:ready', 'paraframe:navigate', 'paraframe:key']);
 
 export function isFrameMessage(data: unknown): data is FrameMessage {
 	return (
@@ -24,8 +22,11 @@ export function postToHost(message: FrameMessage) {
 	if (window.parent !== window) window.parent.postMessage(message, location.origin);
 }
 
-/** Keys the player handles. Frames forward them so shortcuts work while a frame has focus. */
-export const PLAYER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'r', 'R', 'c', 'C']);
+/**
+ * Keys the player handles. Frames forward them so shortcuts work while a
+ * frame has focus. Comments listen in the frame themselves for C and Escape.
+ */
+export const PLAYER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'r', 'R']);
 
 export function isEditable(target: EventTarget | null) {
 	return (

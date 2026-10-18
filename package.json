@@ -2,7 +2,7 @@
 	"name": "paraframe",
 	"version": "0.1.0",
 	"description": "A read-only viewer for navigating and arranging UI frames, in the style of a design tool's prototype preview.",
-	"license": "UNLICENSED",
+	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@12.4.1",
 	"engines": {
@@ -16,8 +16,7 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"prepack": "pnpm package",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --tsgo",
-		"test": "pnpm package && node --experimental-strip-types --test scripts/*.test.mjs"
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --tsgo"
 	},
 	"files": [
 		"dist",
@@ -34,11 +33,7 @@
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js"
 		},
-		"./styles.css": "./dist/styles.css",
-		"./server": {
-			"types": "./dist/server.d.ts",
-			"import": "./dist/server.js"
-		}
+		"./styles.css": "./dist/styles.css"
 	},
 	"peerDependencies": {
 		"@sveltejs/kit": "^3.0.0",
@@ -46,6 +41,7 @@
 		"tailwindcss": "^4.3.0"
 	},
 	"devDependencies": {
+		"@convex-works/sign-in": "link:../sign-in",
 		"@sveltejs/adapter-static": "^4.0.0",
 		"@sveltejs/kit": "^3.0.0",
 		"@sveltejs/package": "^3.0.0",
@@ -71,7 +67,6 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
-		"jose": "^6.2.12",
-		"openid-client": "^6.8.8"
+		"visual-comments": "link:../visual-comments/packages/client"
 	}
 }
