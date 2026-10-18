@@ -219,3 +219,7 @@ pnpm package    # build dist/ and lint the package
 
 paraframe has no product-specific code. Keep it that way: anything about a
 particular prototype belongs in the app that uses it.
+
+## License
+
+[MIT](LICENSE)

@@ -2,7 +2,7 @@
 	"name": "paraframe",
 	"version": "0.1.0",
 	"description": "A read-only viewer for navigating and arranging UI frames, in the style of a design tool's prototype preview.",
-	"license": "UNLICENSED",
+	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@12.4.1",
 	"engines": {
