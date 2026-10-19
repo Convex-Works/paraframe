@@ -16,7 +16,7 @@ components, so anything inside them stays interactive.
 - **Real components in iframes.** Each frame renders at its own size, with its own styles, media queries and fixed elements, isolated from paraframe's chrome.
 - **Frame links.** Links, hotspots on any element, and navigation from code.
 - **Static previews.** Optional images at overview scale that switch to live frames as you zoom in.
-- **Comments.** Optional pinned threads on elements inside frames, through [visual-comments](../visual-comments).
+- **Comments.** Optional pinned threads on elements inside frames, through [visual-comments](https://github.com/Convex-Works/visual-comments).
 - **Theming.** `--pf-*` custom properties for the chrome.
 
 Requires SvelteKit 3, Svelte 5 and Tailwind 4 (the chrome is built with Tailwind).
@@ -120,7 +120,7 @@ smaller one.
 
 ## Comments
 
-Optional. Comments come from a [visual-comments](../visual-comments) server
+Optional. Comments come from a [visual-comments](https://github.com/Convex-Works/visual-comments) server
 through your prototype's own server, which also signs viewers in. Wrap the
 viewer layout in `<Comments>` and viewers can press **C** to pin threads on
 elements inside frames. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).

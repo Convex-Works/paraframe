@@ -3,9 +3,9 @@
 A Svelte 5 / SvelteKit library: a read-only viewer for UI frames. Each frame is
 a Svelte component rendered in its own iframe at its own size; paraframe adds a
 pan/zoom `Canvas`, a `Player` that steps through flows, frame-to-frame links,
-optional static previews, and optional comments through visual-comments
-(`../visual-comments`). The package is `src/lib`; `src/routes` + `src/demo` are
-the showcase (`pnpm showcase`).
+optional static previews, and optional comments through
+[visual-comments](https://github.com/Convex-Works/visual-comments). The package
+is `src/lib`; `src/routes` + `src/demo` are the showcase (`pnpm showcase`).
 
 Rules that bite:
 

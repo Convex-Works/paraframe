@@ -1,12 +1,14 @@
 # Comments
 
-Optional. Comments come from a [visual-comments](../../visual-comments) server,
+Optional. Comments come from a [visual-comments](https://github.com/Convex-Works/visual-comments) server,
 through the prototype's own server, which also signs viewers in.
 
 ## Server
 
 In `src/hooks.server.ts`, add the sign-in of
-[@convex-works/sign-in](../../sign-in) and visual-comments' proxy:
+`@convex-works/sign-in` and visual-comments' proxy. `@convex-works/sign-in` is a
+private Convex Works package with no public source; comments need it plus a
+running visual-comments server:
 
 ```ts
 import { sequence } from '@sveltejs/kit/hooks';
@@ -65,7 +67,7 @@ Frames can name something to comment on as a whole with
 `data-vc-target="Name"` (`data-pf-comment` still works).
 
 visual-comments' own markup reference is in
-[its docs](../../visual-comments/docs/MARKUP.md).
+[its docs](https://github.com/Convex-Works/visual-comments/blob/main/docs/MARKUP.md).
 
 ## Theming
 
