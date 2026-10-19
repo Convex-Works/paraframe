@@ -6,6 +6,7 @@
 pnpm showcase   # demo prototype at http://localhost:5173
 pnpm dev        # rebuild dist/ on change, for apps that depend on paraframe
 pnpm check      # type check (TypeScript 7 via svelte-check --tsgo)
+pnpm test       # unit tests (Vitest, in tests/)
 pnpm package    # build dist/ and lint the package
 ```
 
@@ -20,6 +21,8 @@ To run the showcase with comments, see
   are a complete working example, served by `pnpm showcase`. `src/demo` holds
   the demo prototype, its frames and their CSS; `src/routes` wires them up as
   described in [Setup](SETUP.md#routes).
+- [`tests`](../tests) holds the Vitest unit tests. They sit outside `src/lib`
+  so `svelte-package` never copies them into `dist/`.
 
 ## No product-specific code
 
