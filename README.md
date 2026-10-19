@@ -61,7 +61,7 @@ src/routes/
   frame/[frame]/+page.svelte          import your app's CSS; <FrameHost {prototype} resolved={data.resolved} />
 ```
 
-The play and frame routes also need `+page.ts` files; [Setup](docs/SETUP.md)
+The play and frame routes also need `+page.ts` files; [Setup](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md)
 has the full routes, frame sizes and props, static previews and theming.
 
 To see a complete working prototype, clone this repository and run
@@ -123,8 +123,8 @@ smaller one.
 Optional. Comments come from a [visual-comments](../visual-comments) server
 through your prototype's own server, which also signs viewers in. Wrap the
 viewer layout in `<Comments>` and viewers can press **C** to pin threads on
-elements inside frames. See [Comments](docs/COMMENTS.md).
+elements inside frames. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/Convex-Works/paraframe/blob/main/LICENSE)
