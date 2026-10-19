@@ -66,8 +66,8 @@ paraframe tells visual-comments what it needs in markup:
 Frames can name something to comment on as a whole with
 `data-vc-target="Name"` (`data-pf-comment` still works).
 
-visual-comments' own markup reference is in
-[its docs](https://github.com/Convex-Works/visual-comments/blob/main/docs/MARKUP.md).
+visual-comments' own markup reference is in its docs at
+[github.com/Convex-Works/visual-comments](https://github.com/Convex-Works/visual-comments).
 
 ## Theming
 
