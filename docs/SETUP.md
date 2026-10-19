@@ -51,7 +51,7 @@ export const prototype = definePrototype({
 			id: 'onboarding',
 			title: 'Onboarding',
 			frames: [
-				{ id: 'welcome', title: 'Welcome', load: () => import('./frames/Welcome.svelte') },
+				{ id: 'welcome', title: 'Welcome', path: '/welcome', load: () => import('./frames/Welcome.svelte') }, // path: shown beside the title
 				{
 					id: 'welcome-phone',
 					title: 'Welcome on a phone',

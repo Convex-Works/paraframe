@@ -181,6 +181,7 @@
 					<span class="hidden text-pf-island-muted sm:inline" aria-hidden="true">/</span>
 				{/if}
 				<span class="truncate font-medium">{frame?.title ?? frameId}</span>
+				{#if frame?.path}<span class="hidden truncate text-pf-island-muted md:inline">{frame.path}</span>{/if}
 			</p>
 		</div>
 

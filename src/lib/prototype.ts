@@ -37,6 +37,7 @@ export function definePrototype(definition: PrototypeDefinition): Prototype {
 			const frame: Frame = {
 				id: f.id,
 				title: f.title,
+				path: f.path,
 				load: f.load,
 				props: f.props ?? {},
 				size: { ...size, ...f.size },

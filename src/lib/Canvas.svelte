@@ -39,6 +39,8 @@
 	const LOAD_IDLE_MS = 50;
 	// Below this on-screen width, frame titles are hidden.
 	const MIN_LABEL_WIDTH = 72;
+	// Below this on-screen width, a frame's path is hidden and its title keeps the room.
+	const PATH_LABEL_WIDTH = 360;
 	// The comments panel floats over the right edge; fitting keeps frames clear of it.
 	const PANEL_INSET = 320 + 12 * 2;
 	const TOOLBAR_HEIGHT = 56;
@@ -637,6 +639,8 @@
 								ondblclick={() => play(frame.id)}
 							>
 								{frame.title}
+								<!-- The path only once the title has room beside it. -->
+								{#if frame.path && s.width >= PATH_LABEL_WIDTH}<span class="pl-1 text-pf-canvas-muted">{frame.path}</span>{/if}
 							</button>
 							{#if frame.id === selected || frame.id === hovered}
 								<button
