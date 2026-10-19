@@ -1,4 +1,4 @@
-![paraframe — Click through your Svelte prototypes.](docs/assets/paraframe-banner.png)
+![paraframe — Click through your Svelte prototypes.](https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/paraframe-banner.png)
 
 <p align="center">
   <a href="docs/SETUP.md">Setup</a> ·
@@ -61,7 +61,7 @@ src/routes/
   frame/[frame]/+page.svelte          import your app's CSS; <FrameHost {prototype} resolved={data.resolved} />
 ```
 
-The play and frame routes also need `+page.ts` files; [Setup](docs/SETUP.md)
+The play and frame routes also need `+page.ts` files; [Setup](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md)
 has the full routes, frame sizes and props, static previews and theming.
 
 To see a complete working prototype, clone this repository and run
@@ -102,16 +102,16 @@ double-click a frame to play it.
 
 ## Screenshots
 
-![The canvas: every frame of a prototype, in Desktop and Phone sections, with comment pins](docs/assets/screenshots/canvas-overview.png)
+![The canvas: every frame of a prototype, in Desktop and Phone sections, with comment pins](https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/canvas-overview.png)
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/canvas-zoom.png" alt="Zoomed in on the canvas, hovering a live frame" /><br />Zoom in and frames are live: hover states and tooltips work.</td>
-    <td width="50%"><img src="docs/assets/screenshots/player.png" alt="The player stepping through a flow" /><br />The player, partway through a flow.</td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/canvas-zoom.png" alt="Zoomed in on the canvas, hovering a live frame" /><br />Zoom in and frames are live: hover states and tooltips work.</td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/player.png" alt="The player stepping through a flow" /><br />The player, partway through a flow.</td>
   </tr>
   <tr>
-    <td><img src="docs/assets/screenshots/comments-player.png" alt="Comment threads in the player" /><br />Comments pinned to elements, with the thread list beside the frame.</td>
-    <td><img src="docs/assets/screenshots/comments-canvas.png" alt="Comment mode on the canvas" /><br />Every thread across the prototype, from the canvas.</td>
+    <td><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/comments-player.png" alt="Comment threads in the player" /><br />Comments pinned to elements, with the thread list beside the frame.</td>
+    <td><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/comments-canvas.png" alt="Comment mode on the canvas" /><br />Every thread across the prototype, from the canvas.</td>
   </tr>
 </table>
 
@@ -123,8 +123,8 @@ smaller one.
 Optional. Comments come from a [visual-comments](../visual-comments) server
 through your prototype's own server, which also signs viewers in. Wrap the
 viewer layout in `<Comments>` and viewers can press **C** to pin threads on
-elements inside frames. See [Comments](docs/COMMENTS.md).
+elements inside frames. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/Convex-Works/paraframe/blob/main/LICENSE)
