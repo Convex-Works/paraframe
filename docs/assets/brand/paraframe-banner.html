@@ -1,0 +1,424 @@
+<!doctype html>
+<!--
+  paraframe's GitHub README banner (docs/assets/paraframe-banner.png).
+  The composition is paraframe's own chrome (src/lib/Canvas.svelte,
+  src/lib/Player.svelte, visual-comments' pin) rebuilt in static HTML, with
+  real screenshots of frames from an example invoicing prototype
+  ("Brightbook", not part of this repository) inside it.
+
+  Render: open this file over file:// in a Chromium-based browser with a
+  1280 × 840 viewport at device scale factor 2 and screenshot #banner
+  (2560 × 1680 PNG). Fonts are local (brand/fonts), nothing loads from the network.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>paraframe · GitHub banner</title>
+    <style>
+      @font-face {
+        font-family: "Geist Variable";
+        src: url("fonts/geist-latin-wght-normal.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Inter Variable";
+        src: url("fonts/inter-latin-wght-normal.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: block;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: #292524;
+        background: #e7e5e4;
+        font-family: "Geist Variable", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      svg { display: block; }
+      #banner {
+        position: relative;
+        width: 1280px;
+        height: 840px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      /* Title block: same grammar as tide's banner. */
+      .intro {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 48px;
+      }
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 50px;
+        line-height: 58px;
+        font-weight: 600;
+        letter-spacing: -1.5px;
+      }
+      .wordmark svg { flex: none; margin-top: 4px; }
+      h1 {
+        margin: 25px 0 0;
+        font-size: 36px;
+        line-height: 44px;
+        font-weight: 500;
+        letter-spacing: -1.25px;
+      }
+
+      /* The canvas's dot grid, carried out onto the page and faded in. */
+      .backdrop {
+        position: absolute;
+        inset: 212px 0 0 0;
+        background-image: radial-gradient(circle, rgb(41 37 36 / 0.3) 1px, transparent 1.5px);
+        background-size: 16px 16px;
+        background-position: 4px 4px;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%),
+          radial-gradient(ellipse 60% 70% at 50% 60%, transparent 40%, #000 100%);
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+        opacity: 0.8;
+      }
+
+      /* ── paraframe chrome tokens (src/lib/styles.css) ── */
+      .pf {
+        --pf-ink: #292524;
+        --pf-muted: #78716c;
+        --pf-surface: #f5f5f4;
+        --pf-canvas: #1c1917;
+        --pf-canvas-ink: #e7e5e4;
+        --pf-canvas-muted: #a8a29e;
+        --pf-selection: #f5f5f4;
+        --pf-section: #292524;
+        --pf-grid: rgb(168 162 158 / 0.2);
+        --pf-accent: #57534e;
+        --pf-avatar: #009aaa;
+        --pf-comment: #0d99ff;
+        --pf-island: rgb(50 50 50 / 0.57);
+        --pf-island-muted: rgb(255 255 255 / 0.6);
+        position: absolute;
+        overflow: hidden;
+        color: var(--pf-canvas-ink);
+        background-color: var(--pf-canvas);
+        border-radius: 12px;
+        font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+        font-size: 13px;
+        box-shadow:
+          0 0 0 1px rgb(0 0 0 / 0.35),
+          0 24px 60px -24px rgb(0 0 0 / 0.7);
+      }
+      .island {
+        position: absolute;
+        top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px;
+        border-radius: 9999px;
+        background: var(--pf-island);
+        color: #fff;
+        white-space: nowrap;
+      }
+      .tool {
+        display: inline-flex;
+        height: 30px;
+        min-width: 30px;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 0 10px;
+        border-radius: 9999px;
+      }
+      .tool.icon { padding: 0; }
+      .tool.primary {
+        gap: 6px;
+        padding: 0 14px 0 12px;
+        color: var(--pf-ink);
+        background: #fff;
+        font-weight: 500;
+      }
+      .muted { color: var(--pf-island-muted); }
+      .ico {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ── Canvas ── */
+      .canvas {
+        left: 84px;
+        top: 236px;
+        width: 772px;
+        height: 540px;
+        background-image: radial-gradient(circle, var(--pf-grid) 1px, transparent 1.4px);
+        background-size: 18px 18px;
+        background-position: 6px 6px;
+      }
+      .canvas .title {
+        left: 10px;
+        gap: 9px;
+        padding: 5px 18px 5px 12px;
+      }
+      .title b { display: block; font-size: 13px; font-weight: 600; line-height: 18px; }
+      .title small { display: block; font-size: 11.5px; line-height: 15px; }
+      .canvas .controls { right: 10px; }
+      .section {
+        position: absolute;
+        border-radius: 14px;
+        background: var(--pf-section);
+      }
+      .section-label {
+        position: absolute;
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .frame {
+        position: absolute;
+        overflow: hidden;
+        background: #fff;
+      }
+      .frame img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top left;
+      }
+      .frame-label {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 0 3px;
+        color: var(--pf-canvas-muted);
+        font-size: 11px;
+        line-height: 16px;
+      }
+      .frame-label.selected { color: var(--pf-selection); }
+      .selected-ring {
+        position: absolute;
+        box-shadow: 0 0 0 2px var(--pf-selection);
+      }
+      .flow-tag {
+        position: absolute;
+        display: inline-flex;
+        height: 18px;
+        align-items: center;
+        gap: 3px;
+        padding: 0 7px 0 5px;
+        max-width: 100%;
+        overflow: hidden;
+        border-radius: 2px;
+        background: var(--pf-accent);
+        color: var(--pf-surface);
+        font-size: 10px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+      }
+      .flow-tag svg { flex: none; }
+
+      /* ── Player ── */
+      .player {
+        z-index: 2;
+        left: 740px;
+        top: 292px;
+        width: 448px;
+        height: 516px;
+        box-shadow:
+          0 0 0 1px rgb(0 0 0 / 0.4),
+          0 30px 70px -20px rgb(0 0 0 / 0.75),
+          0 10px 24px -10px rgb(0 0 0 / 0.4);
+      }
+      .player .crumbs { left: 10px; padding-right: 14px; gap: 6px; }
+      .player .nav { right: 10px; }
+      .counter { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+      .dot {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--pf-comment);
+      }
+      .stage-frame {
+        position: absolute;
+        left: 126px;
+        top: 66px;
+        width: 196px;
+        height: 424px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: #fff;
+      }
+      .stage-frame img { display: block; width: 100%; }
+
+      /* visual-comments' pin, expanded on hover. */
+      .pin {
+        position: absolute;
+        z-index: 3;
+        display: flex;
+        gap: 9px;
+        padding: 9px 14px 9px 9px;
+        color: #1c1917;
+        background: #fff;
+        border-radius: 18px 18px 18px 4px;
+        box-shadow: 0 4px 18px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(0 0 0 / 0.04);
+        font-size: 12.5px;
+        line-height: 17px;
+        white-space: nowrap;
+      }
+      .avatar {
+        display: grid;
+        flex: none;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--pf-avatar);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .pin .who { font-weight: 550; }
+      .pin .when { margin-left: 4px; color: #78716c; }
+      .pin .unread {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--pf-comment);
+        box-shadow: 0 0 0 2px #fff;
+      }
+      .target {
+        position: absolute;
+        z-index: 2;
+        border-radius: 3px;
+        box-shadow: 0 0 0 1.5px var(--pf-comment);
+        background: rgb(13 153 255 / 0.06);
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-canvas" viewBox="0 0 24 24"><path class="ico" d="M3 6.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M14 6.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M3 17.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M14 17.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0" /></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path class="ico" d="M7 5l12 7-12 7z" /></symbol>
+        <symbol id="i-down" viewBox="0 0 24 24"><path class="ico" d="M6 9l6 6 6-6" /></symbol>
+        <symbol id="i-left" viewBox="0 0 24 24"><path class="ico" d="M15 6l-6 6 6 6" /></symbol>
+        <symbol id="i-right" viewBox="0 0 24 24"><path class="ico" d="M9 6l6 6-6 6" /></symbol>
+        <symbol id="i-comment" viewBox="0 0 24 24"><path class="ico" d="M12 3.5a8.5 8.5 0 1 1 0 17H3.5V12A8.5 8.5 0 0 1 12 3.5z" /></symbol>
+        <symbol id="i-external" viewBox="0 0 24 24"><path class="ico" d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></symbol>
+      </defs>
+    </svg>
+
+    <main id="banner" aria-label="paraframe. Click through your Svelte prototypes.">
+      <div class="backdrop" aria-hidden="true"></div>
+
+      <header class="intro">
+        <div class="wordmark">
+          <svg width="54" height="54" viewBox="0 0 100 100" aria-hidden="true">
+            <path fill="#1c1917" d="M11.75 6L88 6A6 6 0 0 1 94 12L94 47L78.84 47Z" />
+            <path fill="#ff4f1f" d="M94 53L94 88A6 6 0 0 1 88 94L11.75 94L78.84 53Z" />
+            <path fill="#0d8cff" d="M6 90.48L6 9.52L72.25 50Z" />
+          </svg>
+          <span>paraframe</span>
+        </div>
+        <h1>Click through your Svelte prototypes.</h1>
+      </header>
+
+      <!-- Canvas: every frame, in sections. -->
+      <div class="pf canvas" aria-hidden="true">
+        <div class="section" style="left: 30px; top: 84px; width: 830px; height: 207px"></div>
+        <p class="section-label" style="left: 34px; top: 60px">Desktop</p>
+
+        <div class="frame" style="left: 66px; top: 132px; width: 218px; height: 123px">
+          <img src="banner/frame-overview.png" alt="" />
+        </div>
+        <div class="frame-label" style="left: 66px; top: 113px">Overview</div>
+        <div class="flow-tag" style="left: 72px; top: 138px">
+          <svg width="10" height="10"><use href="#i-play" /></svg>Chase an overdue invoice
+        </div>
+
+        <div class="frame" style="left: 320px; top: 132px; width: 218px; height: 123px">
+          <img src="banner/frame-invoices.png" alt="" />
+        </div>
+        <div class="frame-label" style="left: 320px; top: 113px">Invoices</div>
+
+        <div class="frame" style="left: 574px; top: 132px; width: 218px; height: 123px">
+          <img src="banner/frame-invoice.png" alt="" />
+        </div>
+        <div class="selected-ring" style="left: 574px; top: 132px; width: 218px; height: 123px"></div>
+        <div class="frame-label selected" style="left: 574px; top: 113px">
+          Invoice<svg width="12" height="12"><use href="#i-play" /></svg>
+        </div>
+
+        <div class="section" style="left: 30px; top: 344px; width: 248px; height: 240px"></div>
+        <p class="section-label" style="left: 34px; top: 320px">Phone</p>
+
+        <div class="frame" style="left: 66px; top: 392px; width: 68px; height: 147px">
+          <img src="banner/frame-phone-overview.png" alt="" />
+        </div>
+        <div class="frame-label" style="left: 66px; top: 373px">Overview</div>
+        <div class="flow-tag" style="left: 70px; top: 396px; max-width: 60px">
+          <svg width="10" height="10"><use href="#i-play" /></svg>Check in…
+        </div>
+
+        <div class="frame" style="left: 170px; top: 392px; width: 68px; height: 147px">
+          <img src="banner/frame-phone-invoice.png" alt="" />
+        </div>
+        <div class="frame-label" style="left: 170px; top: 373px">Invoice</div>
+
+        <div class="island title">
+          <svg width="18" height="18"><use href="#i-canvas" /></svg>
+          <div>
+            <b>Brightbook</b>
+            <small class="muted">Invoicing for small studios · round 3</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player: one frame at a time, with a comment pinned in it. -->
+      <div class="pf player" aria-hidden="true">
+        <div class="island crumbs">
+          <span class="tool icon"><svg width="16" height="16"><use href="#i-canvas" /></svg></span>
+          <span class="muted">Phone</span><span class="muted">/</span><span>Overview</span>
+        </div>
+        <div class="island nav">
+          <span class="tool icon muted"><svg width="16" height="16"><use href="#i-left" /></svg></span>
+          <span class="counter muted">5 of 6</span>
+          <span class="tool icon"><svg width="16" height="16"><use href="#i-right" /></svg></span>
+          <span class="tool">Flows<svg width="14" height="14"><use href="#i-down" /></svg></span>
+          <span class="tool icon" style="position: relative">
+            <svg width="16" height="16"><use href="#i-comment" /></svg><span class="dot"></span>
+          </span>
+        </div>
+
+        <div class="stage-frame">
+          <img src="banner/frame-phone-overview.png" alt="" />
+        </div>
+
+        <div class="target" style="left: 135px; top: 370px; width: 178px; height: 32px"></div>
+        <div class="pin" style="left: 168px; top: 396px">
+          <span class="avatar">M</span>
+          <span>
+            <span class="who">Maya</span><span class="when">2m</span><br />
+            Hide drafts on the phone?
+          </span>
+          <span class="unread"></span>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
