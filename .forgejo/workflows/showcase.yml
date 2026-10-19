@@ -1,0 +1,56 @@
+name: Showcase
+
+# Builds the paraframe.convex.works image (deploy/Dockerfile) on every pull
+# request, and pushes it on main when the registry secrets are set. Rolling it
+# out to the cluster is a manual step: see docs/DEPLOY.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  image:
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-22.04@sha256:b40b8af93baee90b83f29c834440873300c8478809535786dbf79fa836c086ac
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: paraframe
+      # paraframe links ../visual-comments/packages/client (see deploy/Dockerfile).
+      - uses: actions/checkout@v4
+        with:
+          repository: convexworks/visual-comments
+          path: visual-comments
+          token: ${{ secrets.VISUAL_COMMENTS_TOKEN || github.token }}
+      - name: Build image
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          docker build --file paraframe/deploy/Dockerfile --tag "paraframe-showcase:${SHA}" .
+      - name: Push image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          if [ -z "${REGISTRY_URL}" ] || [ -z "${REGISTRY_USER}" ] || [ -z "${REGISTRY_TOKEN}" ]; then
+            echo "Registry secrets are unset; skipping image push."
+            exit 0
+          fi
+
+          registry_path="${REGISTRY_URL#http://}"
+          registry_path="${registry_path#https://}"
+          registry_path="${registry_path%/}"
+          registry_host="${registry_path%%/*}"
+          image="${registry_path}/paraframe-showcase"
+
+          printf '%s' "${REGISTRY_TOKEN}" \
+            | docker login "${registry_host}" --username "${REGISTRY_USER}" --password-stdin
+          docker tag "paraframe-showcase:${SHA}" "${image}:${SHA}"
+          docker push "${image}:${SHA}"
+          echo "Pushed ${image}:${SHA}"

@@ -39,4 +39,5 @@ Further reading:
 - [docs/SETUP.md](docs/SETUP.md) — full prototype definition, routes, static canvas previews, theming.
 - [docs/COMMENTS.md](docs/COMMENTS.md) — comments integration, `Comments` props, markup contract, showcase with comments.
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — scripts, repository layout, the no-product-code rule, brand assets and how the banner is rendered.
+- [docs/DEPLOY.md](docs/DEPLOY.md) — how the showcase is built and served at paraframe.convex.works.
 - [docs/assets/brand/](docs/assets/brand/) — logo files and banner source.

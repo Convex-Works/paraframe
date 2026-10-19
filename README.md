@@ -1,6 +1,7 @@
 ![paraframe — Click through your Svelte prototypes.](https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/paraframe-banner.png)
 
 <p align="center">
+  <a href="https://paraframe.convex.works">Showcase</a> ·
   <a href="docs/SETUP.md">Setup</a> ·
   <a href="docs/COMMENTS.md">Comments</a> ·
   <a href="docs/DEVELOPMENT.md">Development</a>
@@ -10,6 +11,8 @@ paraframe is a read-only viewer for UI frames, in the style of a design tool's
 prototype preview. You write each frame as a Svelte component, and paraframe
 lays them out on a canvas and plays them one at a time. Frames are real
 components, so anything inside them stays interactive.
+
+Try the showcase at <https://paraframe.convex.works>.
 
 - **Canvas.** Every frame in sections on a board you can pan and zoom.
 - **Player.** One frame at a time, scaled to the window; named flows give you starting points.

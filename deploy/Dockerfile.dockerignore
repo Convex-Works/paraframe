@@ -1,0 +1,7 @@
+# Paths are relative to the build context, the directory holding paraframe/
+# and visual-comments/ (see deploy/Dockerfile).
+**/node_modules
+**/.svelte-kit
+**/.git
+paraframe/build
+paraframe/dist
