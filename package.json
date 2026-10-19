@@ -1,8 +1,28 @@
 {
 	"name": "paraframe",
 	"version": "0.1.0",
-	"description": "A read-only viewer for navigating and arranging UI frames, in the style of a design tool's prototype preview.",
+	"description": "Click through Svelte prototypes like a Figma file: real Svelte components as frames, on a zoomable canvas and in a flow player.",
+	"keywords": [
+		"svelte",
+		"sveltekit",
+		"svelte5",
+		"prototype",
+		"prototyping",
+		"prototype-viewer",
+		"canvas",
+		"infinite-canvas",
+		"design-tools",
+		"figma",
+		"frames"
+	],
+	"homepage": "https://paraframe.convex.works",
+	"bugs": "https://github.com/Convex-Works/paraframe/issues",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Convex-Works/paraframe.git"
+	},
 	"license": "MIT",
+	"author": "Convex Works",
 	"type": "module",
 	"packageManager": "pnpm@12.4.1",
 	"engines": {

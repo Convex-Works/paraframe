@@ -1,4 +1,4 @@
-![paraframe — Click through your Svelte prototypes.](docs/assets/paraframe-banner.png)
+![paraframe — Click through your Svelte prototypes.](https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/paraframe-banner.png)
 
 <p align="center">
   <a href="docs/SETUP.md">Setup</a> ·
@@ -102,16 +102,16 @@ double-click a frame to play it.
 
 ## Screenshots
 
-![The canvas: every frame of a prototype, in Desktop and Phone sections, with comment pins](docs/assets/screenshots/canvas-overview.png)
+![The canvas: every frame of a prototype, in Desktop and Phone sections, with comment pins](https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/canvas-overview.png)
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/canvas-zoom.png" alt="Zoomed in on the canvas, hovering a live frame" /><br />Zoom in and frames are live: hover states and tooltips work.</td>
-    <td width="50%"><img src="docs/assets/screenshots/player.png" alt="The player stepping through a flow" /><br />The player, partway through a flow.</td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/canvas-zoom.png" alt="Zoomed in on the canvas, hovering a live frame" /><br />Zoom in and frames are live: hover states and tooltips work.</td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/player.png" alt="The player stepping through a flow" /><br />The player, partway through a flow.</td>
   </tr>
   <tr>
-    <td><img src="docs/assets/screenshots/comments-player.png" alt="Comment threads in the player" /><br />Comments pinned to elements, with the thread list beside the frame.</td>
-    <td><img src="docs/assets/screenshots/comments-canvas.png" alt="Comment mode on the canvas" /><br />Every thread across the prototype, from the canvas.</td>
+    <td><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/comments-player.png" alt="Comment threads in the player" /><br />Comments pinned to elements, with the thread list beside the frame.</td>
+    <td><img src="https://raw.githubusercontent.com/Convex-Works/paraframe/main/docs/assets/screenshots/comments-canvas.png" alt="Comment mode on the canvas" /><br />Every thread across the prototype, from the canvas.</td>
   </tr>
 </table>
 
