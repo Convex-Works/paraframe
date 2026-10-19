@@ -22,7 +22,8 @@ Rules that bite:
   not here.
 - Theme through the `--pf-*` custom properties in `src/lib/styles.css`; the
   comment colours map onto visual-comments' `--vc-*` there.
-- `pnpm check` and `pnpm package` must pass before committing.
+- `pnpm check`, `pnpm test` and `pnpm package` must pass before committing.
+  Tests live in `tests/` (Vitest), outside `src/lib`, so they never ship.
 
 Further reading:
 
