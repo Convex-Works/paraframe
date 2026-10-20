@@ -98,11 +98,8 @@ VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase
 ```
 
 The showcase's [`src/hooks.server.ts`](../src/hooks.server.ts) adds the sign-in
-and the comments proxy only when `VITE_COMMENTS_SERVER` is set, and only then
-loads `@convex-works/sign-in`. That package is private and linked from
-`../sign-in`, so comments in the showcase need the
-[sign-in repository](https://git.convex.works/ConvexWorks/sign-in) checked out
-next to this one (then run `pnpm install` again). Without it, `pnpm install`,
-`pnpm check`, `pnpm build` and the showcase without comments all work;
-[`src/sign-in.d.ts`](../src/sign-in.d.ts) declares the little the showcase
-uses of it.
+and the comments proxy only when `VITE_COMMENTS_SERVER` is set. The sign-in
+comes from the private `@convex-works/sign-in` package, linked from
+`../sign-in`: check out the
+[sign-in repository](https://git.convex.works/ConvexWorks/sign-in) next to
+this one and run `pnpm install` again.

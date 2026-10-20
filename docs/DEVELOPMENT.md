@@ -10,8 +10,6 @@ pnpm test       # unit tests (Vitest, in tests/)
 pnpm package    # build dist/ and lint the package
 ```
 
-A fresh clone needs no other repositories.
-
 To run the showcase with comments, see
 [Comments › Running the showcase with comments](COMMENTS.md#running-the-showcase-with-comments).
 
