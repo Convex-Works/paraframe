@@ -54,12 +54,22 @@
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js"
 		},
+		"./comments": {
+			"types": "./dist/comments.d.ts",
+			"svelte": "./dist/comments.js"
+		},
 		"./styles.css": "./dist/styles.css"
 	},
 	"peerDependencies": {
 		"@sveltejs/kit": "^3.0.0",
 		"svelte": "^5.57.1",
-		"tailwindcss": "^4.3.0"
+		"tailwindcss": "^4.3.0",
+		"visual-comments": "^0.1.0"
+	},
+	"peerDependenciesMeta": {
+		"visual-comments": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@convex-works/sign-in": "link:../sign-in",
@@ -75,20 +85,12 @@
 		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.0",
 		"typescript": "~6.0.3",
+		"visual-comments": "^0.1.0",
 		"vite": "^8.3.0",
 		"vitest": "^5.0.5"
 	},
-	"keywords": [
-		"svelte",
-		"sveltekit",
-		"prototype",
-		"frames"
-	],
 	"imports": {
 		"#lib": "./src/lib/index.js",
 		"#lib/*": "./src/lib/*"
-	},
-	"dependencies": {
-		"visual-comments": "link:../visual-comments/packages/client"
 	}
 }

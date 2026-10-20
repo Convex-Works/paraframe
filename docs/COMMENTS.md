@@ -3,6 +3,16 @@
 Optional. Comments come from a [visual-comments](https://github.com/Convex-Works/visual-comments) server,
 through the prototype's own server, which also signs viewers in.
 
+visual-comments is an optional peer dependency of paraframe. Add it to the
+app to use comments:
+
+```sh
+pnpm add visual-comments
+```
+
+Everything that needs it is in `paraframe/comments`; the main `paraframe`
+entry never imports it, so apps without comments don't install it.
+
 ## Server
 
 In `src/hooks.server.ts`, add the sign-in of
@@ -29,7 +39,7 @@ Then wrap the viewer layout in `Comments`:
 <!-- src/routes/(viewer)/+layout.svelte -->
 <script lang="ts">
   import 'paraframe/styles.css';
-  import { Comments } from 'paraframe';
+  import { Comments } from 'paraframe/comments';
   let { children } = $props();
 </script>
 
@@ -40,6 +50,9 @@ Then wrap the viewer layout in `Comments`:
 
 `Comments` takes `endpoint` (default `/_comments`) and `auth` (default
 `/auth`) when the routes are elsewhere, e.g. under a base path.
+`useComments()`, also from `paraframe/comments`, returns visual-comments'
+`VisualComments` object inside it (undefined until it has started in the
+browser).
 
 The canvas and player then show a comment button and the account (avatar or
 Sign in) in their toolbars. Viewers press **C** or the button to enter comment
@@ -85,4 +98,8 @@ VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase
 ```
 
 The showcase's [`src/hooks.server.ts`](../src/hooks.server.ts) adds the sign-in
-and the comments proxy only when `VITE_COMMENTS_SERVER` is set.
+and the comments proxy only when `VITE_COMMENTS_SERVER` is set. The sign-in
+comes from the private `@convex-works/sign-in` package, linked from
+`../sign-in`: check out the
+[sign-in repository](https://git.convex.works/ConvexWorks/sign-in) next to
+this one and run `pnpm install` again.
