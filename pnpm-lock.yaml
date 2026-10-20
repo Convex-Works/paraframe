@@ -206,8 +206,8 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
       visual-comments:
-        specifier: git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client
-        version: git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client(svelte@5.57.2)
+        specifier: ^0.1.0
+        version: 0.1.0(svelte@5.57.2)
       vite:
         specifier: ^8.3.0
         version: 8.3.4(@types/node@26.6.5)(jiti@2.7.0)
@@ -1015,9 +1015,8 @@ packages:
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
-  visual-comments@git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client:
-    resolution: {commit: a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2, path: /packages/client, repo: ssh://git@ssh.git.convex.works/convexworks/visual-comments.git, type: git}
-    version: 0.1.0
+  visual-comments@0.1.0:
+    resolution: {integrity: sha512-Msy6LZQXqSrYD2Al9fN3qWqmdo5Sx5d4BY0zU34UPRE2XX5aWnvVcWtozB6g6iRZq0gYz17y/opMR00jJ87K1Q==}
     peerDependencies:
       svelte: ^5.57.1
 
@@ -1719,7 +1718,7 @@ snapshots:
 
   undici-types@8.9.0: {}
 
-  visual-comments@git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client(svelte@5.57.2):
+  visual-comments@0.1.0(svelte@5.57.2):
     dependencies:
       svelte: 5.57.2
 

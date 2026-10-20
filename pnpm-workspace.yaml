@@ -1,5 +1,0 @@
-# The visual-comments devDependency is fetched from git until it is on npm, and
-# pnpm builds it (its prepack) only when allowed. Remove this once the
-# devDependency is "visual-comments": "^0.1.0".
-allowBuilds:
-  "visual-comments@git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git": true

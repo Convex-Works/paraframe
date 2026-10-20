@@ -10,9 +10,7 @@ pnpm test       # unit tests (Vitest, in tests/)
 pnpm package    # build dist/ and lint the package
 ```
 
-A fresh clone needs no other repositories. Until visual-comments is on npm,
-its devDependency comes from its git repository at a pinned commit, and
-`pnpm-workspace.yaml` allows pnpm to build it on install.
+A fresh clone needs no other repositories.
 
 To run the showcase with comments, see
 [Comments › Running the showcase with comments](COMMENTS.md#running-the-showcase-with-comments).
