@@ -7,7 +7,7 @@
 <script lang="ts">
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { createVisualComments, type VisualComments } from 'visual-comments';
-	import { setComments } from './comments.js';
+	import { setComments } from './internal/comments.js';
 
 	let { endpoint = '/_comments', auth = '/auth', page = 'prototype', children }: {
 		/** Where the site's server answers comment requests (visual-comments' `commentsProxy`). */

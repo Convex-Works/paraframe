@@ -5,7 +5,6 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { CommentThread } from 'visual-comments';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { devicePixelRatio } from 'svelte/reactivity/window';
 	import { goto } from '$app/navigation';
@@ -17,7 +16,7 @@
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable } from './messages.js';
-	import { describeFrame, useCommentsHolder } from './comments.js';
+	import { describeFrame, useCommentsHolder, type CommentThreadPin } from './internal/comments.js';
 	import type { Flow, Frame, Prototype, Section } from './types.js';
 
 	let {
@@ -275,7 +274,7 @@
 	}
 
 	// Pans and zooms to a thread's frame unless its pin is already in view.
-	function showThread(thread: CommentThread) {
+	function showThread(thread: CommentThreadPin) {
 		const box = layout.frames.get(thread.surface);
 		if (!box) return false;
 		const target = fitCamera(box, 72, Math.max(camera.z, 1));

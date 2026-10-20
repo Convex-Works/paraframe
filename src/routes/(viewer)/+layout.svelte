@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '#lib/styles.css';
-	import { Comments } from '#lib';
+	import { Comments } from '#lib/comments.js';
 	let { children } = $props();
 
 	// `VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase` adds comments; see src/hooks.server.ts.

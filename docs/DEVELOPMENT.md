@@ -10,13 +10,21 @@ pnpm test       # unit tests (Vitest, in tests/)
 pnpm package    # build dist/ and lint the package
 ```
 
+A fresh clone needs no other repositories. Until visual-comments is on npm,
+its devDependency comes from its git repository at a pinned commit, and
+`pnpm-workspace.yaml` allows pnpm to build it on install.
+
 To run the showcase with comments, see
 [Comments › Running the showcase with comments](COMMENTS.md#running-the-showcase-with-comments).
 
 ## Layout
 
 - [`src/lib`](../src/lib) is the package: `Canvas`, `Player`, `FrameHost`,
-  `FrameLink`, `Comments`, `definePrototype` and helpers, and `styles.css`.
+  `FrameLink`, `definePrototype` and helpers, and `styles.css` from
+  `index.ts`, and `Comments` from `comments.ts` (`paraframe/comments`). Only
+  `comments.ts` and `Comments.svelte` may import visual-comments, an optional
+  peer dependency; the canvas and player use the types in
+  `internal/comments.ts`.
 - [`src/routes`](../src/routes) and [`src/demo`](../src/demo) in this package
   are a complete working example, served by `pnpm showcase`. `src/demo` holds
   the demo prototype, its frames and their CSS; `src/routes` wires them up as

@@ -121,9 +121,11 @@ smaller one.
 ## Comments
 
 Optional. Comments come from a [visual-comments](https://github.com/Convex-Works/visual-comments) server
-through your prototype's own server, which also signs viewers in. Wrap the
-viewer layout in `<Comments>` and viewers can press **C** to pin threads on
-elements inside frames. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).
+through your prototype's own server, which also signs viewers in. Install
+`visual-comments` next to paraframe, wrap the viewer layout in `<Comments>`
+from `paraframe/comments`, and viewers can press **C** to pin threads on
+elements inside frames. Without it, paraframe needs nothing from
+visual-comments. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).
 
 ## License
 

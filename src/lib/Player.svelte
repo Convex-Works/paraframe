@@ -6,13 +6,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import type { CommentThread } from 'visual-comments';
 	import Icon from './internal/Icon.svelte';
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
 	import { isEditable, isFrameMessage, PLAYER_KEYS } from './messages.js';
-	import { describeFrame, useCommentsHolder } from './comments.js';
+	import { describeFrame, useCommentsHolder, type CommentThreadPin } from './internal/comments.js';
 	import type { Flow, Prototype } from './types.js';
 
 	let { prototype, frameId }: { prototype: Prototype; frameId: string } = $props();
@@ -119,7 +118,7 @@
 		const current = comments;
 		if (!current) return;
 		current.configure({
-			show: (thread: CommentThread) => {
+			show: (thread: CommentThreadPin) => {
 				if (!prototype.get(thread.surface)) return false;
 				show(thread.surface);
 				return true;

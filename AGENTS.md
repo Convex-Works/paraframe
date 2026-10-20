@@ -20,6 +20,9 @@ Rules that bite:
   (`data-vc-surface`, `data-vc-frame`, `data-vc-gestures`, `data-vc-panel`,
   `data-pf-frame-ready`); see docs/COMMENTS.md. Fix comment behaviour upstream,
   not here.
+- visual-comments is an optional peer dependency. Only `src/lib/comments.ts`
+  (`paraframe/comments`) and `Comments.svelte` may import it; the main entry,
+  `Canvas` and `Player` use the local types in `src/lib/internal/comments.ts`.
 - Theme through the `--pf-*` custom properties in `src/lib/styles.css`; the
   comment colours map onto visual-comments' `--vc-*` there.
 - `pnpm check`, `pnpm test` and `pnpm package` must pass before committing.

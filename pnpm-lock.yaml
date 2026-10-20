@@ -165,10 +165,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      visual-comments:
-        specifier: link:../visual-comments/packages/client
-        version: link:../visual-comments/packages/client
     devDependencies:
       '@convex-works/sign-in':
         specifier: link:../sign-in
@@ -209,6 +205,9 @@ importers:
       typescript:
         specifier: ~6.0.3
         version: 6.0.3
+      visual-comments:
+        specifier: git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client
+        version: git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client(svelte@5.57.2)
       vite:
         specifier: ^8.3.0
         version: 8.3.4(@types/node@26.6.5)(jiti@2.7.0)
@@ -1016,6 +1015,12 @@ packages:
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
+  visual-comments@git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client:
+    resolution: {commit: a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2, path: /packages/client, repo: ssh://git@ssh.git.convex.works/convexworks/visual-comments.git, type: git}
+    version: 0.1.0
+    peerDependencies:
+      svelte: ^5.57.1
+
   vite@8.3.4:
     resolution: {integrity: sha512-IftLE8phJhdNRIGNEV4JCCvfNScoZQVfcXaN8TQropWGJtOHcu+iAB9pHcuGvmEb/kddw0LBe/jS8ztdC6xdiQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1713,6 +1718,10 @@ snapshots:
       '@typescript/typescript-win32-x64': 7.0.2
 
   undici-types@8.9.0: {}
+
+  visual-comments@git+ssh://git@ssh.git.convex.works/convexworks/visual-comments.git#a4a2e3dbe105557cac4fbb4a93e23a4085fc53d2&path:/packages/client(svelte@5.57.2):
+    dependencies:
+      svelte: 5.57.2
 
   vite@8.3.4(@types/node@26.6.5)(jiti@2.7.0):
     dependencies:
