@@ -1,11 +1,15 @@
 /*
-  paraframe's chrome. Import it once in the layout of the canvas and player
-  routes, not in the frame route: frames carry the host app's own styles.
+  paraframe's chrome. Apps import it once, as paraframe/styles.css, in the
+  layout of the canvas and player routes, not in the frame route: frames carry
+  the host app's own styles.
+
+  This is the Tailwind source. `pnpm package` compiles it into a plain, minified
+  dist/styles.css, so apps need no Tailwind of their own.
 
   Override the --pf-* custom properties to theme the chrome.
 */
 @import 'tailwindcss' source(none);
-@source './';
+@source './lib';
 
 :root {
 	--pf-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

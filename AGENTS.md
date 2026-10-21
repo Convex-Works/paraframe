@@ -12,7 +12,7 @@ Rules that bite:
 - No product-specific code in paraframe. Anything about a particular prototype
   belongs in the app that uses it (or in `src/demo` for the showcase).
 - Chrome styles and frame styles must not leak into each other. The `(viewer)`
-  layout imports `paraframe/styles.css` (Tailwind, `--pf-*` properties); the
+  layout imports `paraframe/styles.css` (compiled Tailwind, `--pf-*` properties); the
   `frame/[frame]` route imports the host app's CSS and nothing of paraframe's.
   Don't import chrome CSS into a frame or frame CSS into the viewer.
 - Comment behaviour (pins, threads, replies, the list, live updates, sign-in UI)
@@ -23,8 +23,13 @@ Rules that bite:
 - visual-comments is an optional peer dependency. Only `src/lib/comments.ts`
   (`paraframe/comments`) and `Comments.svelte` may import it; the main entry,
   `Canvas` and `Player` use the local types in `src/lib/internal/comments.ts`.
-- Theme through the `--pf-*` custom properties in `src/lib/styles.css`; the
+- Theme through the `--pf-*` custom properties in `src/styles.css`; the
   comment colours map onto visual-comments' `--vc-*` there.
+- `src/styles.css` is Tailwind source, kept outside `src/lib`. `pnpm package`
+  compiles it into a plain, minified `dist/styles.css`, so apps need no
+  Tailwind and `tailwindcss` is only a devDependency. Its `@source './lib'`
+  scan finds classes by static text: write class names out in full, never
+  build them from pieces at runtime.
 - `pnpm check`, `pnpm test` and `pnpm package` must pass before committing.
   Tests live in `tests/` (Vitest), outside `src/lib`, so they never ship.
 

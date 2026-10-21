@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '#lib/styles.css';
+	import '../../styles.css';
 	import { Comments } from '#lib/comments.js';
 	let { children } = $props();
 
