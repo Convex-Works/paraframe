@@ -82,7 +82,6 @@
 		border-radius: 9999px;
 		background: var(--pf-island);
 		backdrop-filter: blur(5px);
-		-webkit-backdrop-filter: blur(5px);
 		color: var(--pf-island-ink);
 		pointer-events: auto;
 	}
