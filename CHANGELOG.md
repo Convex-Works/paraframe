@@ -15,6 +15,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `Canvas`: Enter on a focused control (a button, link or menu item)
   activates that control instead of playing the selected frame.
+- Menus have real menu semantics: `role="menu"`, checked flows, frames and
+  scales as `menuitemradio` with `aria-checked`, and keyboard support (arrow
+  keys, Home/End, Escape and Tab close the menu, and focus returns to the
+  trigger).
 
 ## [0.1.0] - 2026-10-20
 
