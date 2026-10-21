@@ -1,0 +1,57 @@
+# Vendored from ConvexWorks/ci-actions@956b9bda39d9f3a20c04b3bf7935bf6352f9e157 by vendor.sh; edit it there.
+name: Await deploy
+description: >-
+  Wait until the service reports this commit at its public /version endpoint,
+  then run an optional smoke check. Needs no credentials: Flux deploys, this
+  only observes.
+
+inputs:
+  version-url:
+    description: URL returning {"revision":"<full commit sha>"}
+    required: true
+  smoke-url:
+    description: URL that must answer 2xx once the new version is live
+    default: ""
+  timeout-minutes:
+    description: How long Flux may take to roll the image out
+    default: "15"
+  resolve:
+    description: >-
+      host:443:address to reach the origin directly, for services behind
+      Cloudflare Access; certificate checks are then skipped, because the
+      origin presents a Cloudflare Origin CA certificate
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        VERSION_URL: ${{ inputs.version-url }}
+        SMOKE_URL: ${{ inputs.smoke-url }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        RESOLVE: ${{ inputs.resolve }}
+      run: |
+        set -euo pipefail
+        sha="${FORGEJO_SHA:-${GITHUB_SHA:?no commit SHA in the environment}}"
+        deadline=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
+        origin=()
+        test -z "$RESOLVE" || origin=(--resolve "$RESOLVE" --insecure)
+        live=""
+        while :; do
+          live="$(curl "${origin[@]+"${origin[@]}"}" --silent --show-error --max-time 10 "$VERSION_URL" 2>/dev/null |
+            sed -n 's/.*"revision"[[:space:]]*:[[:space:]]*"\([0-9a-f]*\)".*/\1/p' || true)"
+          test "$live" = "$sha" && break
+          if test "$(date +%s)" -ge "$deadline"; then
+            echo "Not live after ${TIMEOUT_MINUTES} minutes: $VERSION_URL reports '${live:-nothing}'." >&2
+            echo "Check: kubectl -n flux-system get imagepolicies,imageupdateautomations,kustomizations" >&2
+            exit 1
+          fi
+          sleep 15
+        done
+        echo "Live: $VERSION_URL reports $sha"
+        if test -n "$SMOKE_URL"; then
+          curl "${origin[@]+"${origin[@]}"}" --fail --silent --show-error --retry 6 --retry-all-errors \
+            --retry-delay 5 --max-time 20 --output /dev/null "$SMOKE_URL"
+          echo "Smoke check passed: $SMOKE_URL"
+        fi

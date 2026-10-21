@@ -1,0 +1,109 @@
+# Vendored from ConvexWorks/ci-actions@956b9bda39d9f3a20c04b3bf7935bf6352f9e157 by vendor.sh; edit it there.
+name: Publish image
+description: >-
+  Build the application image and push it to Harbor as
+  <prefix>-<UTC yyyymmddHHMMSS of the commit>-<short sha>. Flux elects the
+  newest such tag and deploys it; this action never touches the cluster.
+
+inputs:
+  repository:
+    description: Image repository, e.g. registry.asergo.com/62198-bob/convex-website
+    required: true
+  context:
+    description: Docker build context
+    default: .
+  dockerfile:
+    description: Path to the Dockerfile
+    default: Dockerfile
+  build-args:
+    description: >-
+      Extra build arguments, one per line, as NAME=value or as NAME alone to
+      pass the value from the step's env (use that form for secrets).
+    default: ""
+  platform:
+    description: Target platform for docker build, e.g. linux/amd64; empty for the runner's own
+    default: ""
+  tag-prefix:
+    description: >-
+      Tag prefix. main for continuous deployment; release for services whose
+      deploys are triggered by hand.
+    default: main
+
+outputs:
+  tag:
+    description: The published tag
+    value: ${{ steps.publish.outputs.tag }}
+  digest:
+    description: The published manifest digest (sha256:...)
+    value: ${{ steps.publish.outputs.digest }}
+  image:
+    description: repository:tag@digest
+    value: ${{ steps.publish.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - id: publish
+      shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+        CONTEXT: ${{ inputs.context }}
+        DOCKERFILE: ${{ inputs.dockerfile }}
+        BUILD_ARGS: ${{ inputs.build-args }}
+        TAG_PREFIX: ${{ inputs.tag-prefix }}
+        PLATFORM: ${{ inputs.platform }}
+      run: |
+        set -euo pipefail
+        : "${HARBOR_USERNAME:?set HARBOR_USERNAME in the step env}"
+        : "${HARBOR_PASSWORD:?set HARBOR_PASSWORD in the step env}"
+        case "$TAG_PREFIX" in main|release) ;; *) echo "tag-prefix must be main or release" >&2; exit 1;; esac
+
+        sha="${FORGEJO_SHA:-${GITHUB_SHA:?no commit SHA in the environment}}"
+        server="${FORGEJO_SERVER_URL:-${GITHUB_SERVER_URL:-}}"
+        repo="${FORGEJO_REPOSITORY:-${GITHUB_REPOSITORY:-}}"
+        registry="${REPOSITORY%%/*}"
+
+        # The commit's own time orders the tags, so re-running an old
+        # workflow can never publish something Flux sees as newer.
+        stamp="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y%m%d%H%M%S "$sha")"
+        tag="${TAG_PREFIX}-${stamp}-${sha:0:7}"
+        image="${REPOSITORY}:${tag}"
+
+        export DOCKER_CONFIG="$(mktemp -d)"
+        trap 'docker logout "$registry" >/dev/null 2>&1 || true; rm -rf "$DOCKER_CONFIG"' EXIT
+        printf '%s' "$HARBOR_PASSWORD" |
+          docker login "$registry" --username "$HARBOR_USERNAME" --password-stdin >/dev/null
+
+        # Tags are immutable: a re-run of the same commit reuses the image.
+        if docker manifest inspect "$image" >/dev/null 2>&1; then
+          echo "$image already exists; not rebuilding."
+          docker pull --quiet "$image" >/dev/null
+        else
+          args=()
+          test -z "$PLATFORM" || args+=(--platform "$PLATFORM")
+          while IFS= read -r arg; do
+            arg="${arg#"${arg%%[![:space:]]*}"}"
+            test -n "$arg" && args+=(--build-arg "$arg")
+          done <<< "$BUILD_ARGS"
+          docker build --pull \
+            --file "$DOCKERFILE" \
+            --build-arg "REVISION=$sha" \
+            "${args[@]+"${args[@]}"}" \
+            --label "org.opencontainers.image.revision=$sha" \
+            --label "org.opencontainers.image.source=$server/$repo" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tag "$image" \
+            "$CONTEXT"
+          docker push --quiet "$image" >/dev/null
+        fi
+
+        ref="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$image" |
+          grep -F "${REPOSITORY}@" | head -n 1)"
+        digest="${ref##*@}"
+        test -n "$digest"
+        {
+          echo "tag=$tag"
+          echo "digest=$digest"
+          echo "image=$image@$digest"
+        } >> "${FORGEJO_OUTPUT:-$GITHUB_OUTPUT}"
+        echo "Published $image@$digest"
