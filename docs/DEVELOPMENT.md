@@ -13,6 +13,8 @@ pnpm css        # compile only src/styles.css into dist/styles.css
 
 To run the showcase with comments, see
 [Comments › Running the showcase with comments](COMMENTS.md#running-the-showcase-with-comments).
+The published showcase at paraframe.convex.works is built and served as
+described in [DEPLOY.md](DEPLOY.md).
 
 ## Layout
 
