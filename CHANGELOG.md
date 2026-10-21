@@ -11,6 +11,11 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Forgejo CI runs check, test, package and build on every pull request and
   on main.
 
+### Fixed
+
+- `Canvas`: Enter on a focused control (a button, link or menu item)
+  activates that control instead of playing the selected frame.
+
 ## [0.1.0] - 2026-10-20
 
 First release.
