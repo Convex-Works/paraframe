@@ -6,6 +6,11 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Forgejo CI runs check, test, package and build on every pull request and
+  on main.
+
 ## [0.1.0] - 2026-10-20
 
 First release.
