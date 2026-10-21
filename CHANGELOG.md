@@ -11,14 +11,25 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Forgejo CI runs check, test, package and build on every pull request and
   on main.
 
+### Changed
+
+- `paraframe/styles.css` is plain, pre-compiled CSS (about 19 kB, 5 kB
+  gzipped). Apps no longer need Tailwind: `tailwindcss` is no longer a peer
+  dependency, and `@tailwindcss/vite` is not needed to use paraframe. Apps
+  that ran paraframe's `styles.css` through their own Tailwind build now get
+  compiled CSS, and can drop Tailwind if only paraframe needed it.
+- The README quickstart works as written in a new `sv create` app: install
+  command, a frame component and the full code of every route file. The
+  setup docs match and add a theming example.
+
 ### Fixed
 
 - `Canvas`: Enter on a focused control (a button, link or menu item)
   activates that control instead of playing the selected frame.
-- Menus have real menu semantics: `role="menu"`, checked flows, frames and
-  scales as `menuitemradio` with `aria-checked`, and keyboard support (arrow
-  keys, Home/End, Escape and Tab close the menu, and focus returns to the
-  trigger).
+- Menus have real menu semantics: `role="menu"`, and the checked flow,
+  frame or scale is a `menuitemradio` with `aria-checked`. Arrow keys and
+  Home/End move between items, Escape or Tab closes the menu, and focus
+  returns to the trigger.
 
 ## [0.1.0] - 2026-10-20
 
