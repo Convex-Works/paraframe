@@ -30,6 +30,8 @@ Rules that bite:
   Tailwind and `tailwindcss` is only a devDependency. Its `@source './lib'`
   scan finds classes by static text: write class names out in full, never
   build them from pieces at runtime.
+- `.forgejo/actions/` is vendored from `ConvexWorks/ci-actions`. Never edit it;
+  re-vendor with that repository's `vendor.sh`.
 - `pnpm check`, `pnpm test` and `pnpm package` must pass before committing.
   Tests live in `tests/` (Vitest), outside `src/lib`, so they never ship.
 

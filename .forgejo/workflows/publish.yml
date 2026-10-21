@@ -1,0 +1,38 @@
+# Publishes the showcase image on every push to main; Flux deploys it to
+# paraframe.convex.works. The contract is §8 of ConvexWorks/infrastructure
+# docs/service-deployment-sop.md: no cluster credentials, no writes to the
+# infrastructure repository.
+name: Publish showcase
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: paraframe-showcase
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: docker
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-22.04@sha256:b40b8af93baee90b83f29c834440873300c8478809535786dbf79fa836c086ac
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Publish image
+        uses: ./.forgejo/actions/publish-image
+        with:
+          repository: registry.asergo.com/62198-bob/paraframe-showcase
+        env:
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Wait for Flux to deploy it
+        uses: ./.forgejo/actions/await-deploy
+        with:
+          version-url: https://paraframe.convex.works/version
+          smoke-url: https://paraframe.convex.works/play/inbox

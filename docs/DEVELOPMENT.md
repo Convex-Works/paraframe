@@ -34,6 +34,8 @@ described in [DEPLOY.md](DEPLOY.md).
   described in [Setup](SETUP.md#routes).
 - [`tests`](../tests) holds the Vitest unit tests. They sit outside `src/lib`
   so `svelte-package` never copies them into `dist/`.
+- [`Dockerfile`](../Dockerfile) and [`nginx.conf`](../nginx.conf) build the
+  showcase image published at paraframe.convex.works; see [DEPLOY.md](DEPLOY.md).
 
 ## No product-specific code
 

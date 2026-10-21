@@ -31,3 +31,6 @@ jobs:
         run: pnpm package
       - name: Build
         run: pnpm build
+      # The showcase image (Dockerfile), as main publishes it.
+      - name: Showcase image
+        run: docker build --tag paraframe-showcase:ci .
