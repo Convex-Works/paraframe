@@ -10,6 +10,9 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Forgejo CI runs check, test, package and build on every pull request and
   on main.
+- Frames take an optional `path`, where the screen lives in the product (for
+  example `/{account}/projects`). The player shows it beside the frame's
+  title, and the canvas does once a frame is wide enough on screen.
 
 ### Changed
 
