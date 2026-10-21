@@ -7,7 +7,8 @@ pnpm showcase   # demo prototype at http://localhost:5173
 pnpm dev        # rebuild dist/ on change, for apps that depend on paraframe
 pnpm check      # type check (TypeScript 7 via svelte-check --tsgo)
 pnpm test       # unit tests (Vitest, in tests/)
-pnpm package    # build dist/ and lint the package
+pnpm package    # build dist/ (with the compiled dist/styles.css) and lint the package
+pnpm css        # compile only src/styles.css into dist/styles.css
 ```
 
 To run the showcase with comments, see
@@ -16,11 +17,15 @@ To run the showcase with comments, see
 ## Layout
 
 - [`src/lib`](../src/lib) is the package: `Canvas`, `Player`, `FrameHost`,
-  `FrameLink`, `definePrototype` and helpers, and `styles.css` from
-  `index.ts`, and `Comments` from `comments.ts` (`paraframe/comments`). Only
+  `FrameLink`, `definePrototype` and helpers from `index.ts`, and `Comments`
+  from `comments.ts` (`paraframe/comments`). Only
   `comments.ts` and `Comments.svelte` may import visual-comments, an optional
   peer dependency; the canvas and player use the types in
   `internal/comments.ts`.
+- [`src/styles.css`](../src/styles.css) is the chrome's Tailwind source.
+  `pnpm package` compiles it, scanning `src/lib` for classes, into the
+  minified `dist/styles.css` that apps import as `paraframe/styles.css`; the
+  showcase imports the source directly through `@tailwindcss/vite`.
 - [`src/routes`](../src/routes) and [`src/demo`](../src/demo) in this package
   are a complete working example, served by `pnpm showcase`. `src/demo` holds
   the demo prototype, its frames and their CSS; `src/routes` wires them up as

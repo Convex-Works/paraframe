@@ -18,8 +18,20 @@ tabs, forms, live editors. Each frame renders in its own iframe at its own
 size. Its styles, media queries and fixed elements behave as they would in the
 real product, and they never leak into paraframe's chrome.
 
-Requires SvelteKit 3, Svelte 5 and Tailwind 4 (the chrome is built with
-Tailwind).
+Requires SvelteKit 3 and Svelte 5. paraframe's chrome ships as plain CSS, so
+your app needs no Tailwind.
+
+## Install
+
+In a SvelteKit app (a new one from `npx sv create --template minimal --types ts`
+works):
+
+```sh
+npm i -D paraframe
+```
+
+Delete the template's root `src/routes/+page.svelte`: the canvas takes its
+place at `/`, and the two would conflict.
 
 ## Define the prototype
 
@@ -59,22 +71,96 @@ export const prototype = definePrototype({
 });
 ```
 
+Each frame is an ordinary Svelte component, such as
+`src/lib/frames/Welcome.svelte`, and receives the frame's `props` as its own.
+
 ## Routes
 
-Then add three routes. The canvas and player share a layout that loads
-paraframe's styles. The frame route loads your product's styles instead.
+The canvas and player share a layout that loads paraframe's styles; the frame
+route loads your product's styles instead.
 
 ```
 src/routes/
-  +layout.ts                       export const prerender = true;
-  (viewer)/+layout.svelte          import 'paraframe/styles.css'
-  (viewer)/+page.svelte            <Canvas {prototype} />
-  (viewer)/play/[frame]/+page.ts   export const entries = () => frameEntries(prototype);
+  +layout.ts
+  (viewer)/+layout.svelte
+  (viewer)/+page.svelte
+  (viewer)/play/[frame]/+page.ts
   (viewer)/play/[frame]/+page.svelte
-                                   <Player {prototype} frameId={page.params.frame ?? ''} />
-  frame/[frame]/+page.ts           entries, plus
-                                   load = async ({ params }) => ({ resolved: await resolveFrame(prototype, params.frame) })
-  frame/[frame]/+page.svelte       import your app's CSS; <FrameHost {prototype} resolved={data.resolved} />
+  frame/[frame]/+page.ts
+  frame/[frame]/+page.svelte
+```
+
+```ts
+// src/routes/+layout.ts
+export const prerender = true;
+```
+
+```svelte
+<!-- src/routes/(viewer)/+layout.svelte -->
+<script lang="ts">
+	import 'paraframe/styles.css';
+	import type { LayoutProps } from './$types';
+
+	let { children }: LayoutProps = $props();
+</script>
+
+{@render children()}
+```
+
+```svelte
+<!-- src/routes/(viewer)/+page.svelte -->
+<script lang="ts">
+	import { Canvas } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+</script>
+
+<Canvas {prototype} />
+```
+
+```ts
+// src/routes/(viewer)/play/[frame]/+page.ts
+import { frameEntries } from 'paraframe';
+import { prototype } from '#lib/prototype.js';
+
+export const entries = () => frameEntries(prototype);
+```
+
+```svelte
+<!-- src/routes/(viewer)/play/[frame]/+page.svelte -->
+<script lang="ts">
+	import { page } from '$app/state';
+	import { Player } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+</script>
+
+<Player {prototype} frameId={page.params.frame ?? ''} />
+```
+
+```ts
+// src/routes/frame/[frame]/+page.ts
+import { frameEntries, resolveFrame } from 'paraframe';
+import { prototype } from '#lib/prototype.js';
+import type { PageLoad } from './$types';
+
+export const entries = () => frameEntries(prototype);
+
+export const load: PageLoad = async ({ params }) => ({
+	resolved: await resolveFrame(prototype, params.frame)
+});
+```
+
+```svelte
+<!-- src/routes/frame/[frame]/+page.svelte -->
+<script lang="ts">
+	// Import your product's own CSS here, never paraframe/styles.css.
+	import { FrameHost } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+</script>
+
+<FrameHost {prototype} resolved={data.resolved} />
 ```
 
 [`src/routes`](../src/routes) and [`src/demo`](../src/demo) in this package are
@@ -122,6 +208,17 @@ frame.
 ## Theming
 
 Override the `--pf-*` custom properties (see
-[`src/lib/styles.css`](../src/lib/styles.css)) after importing
-`paraframe/styles.css`. Comments take `--pf-comment`, `--pf-comment-soft`,
-`--pf-avatar` and `--pf-font`.
+[`src/styles.css`](../src/styles.css)) after importing
+`paraframe/styles.css`, for example in the viewer layout:
+
+```svelte
+<style>
+	:global(:root) {
+		--pf-canvas: #0f172a;
+		--pf-font: 'Inter', sans-serif;
+	}
+</style>
+```
+
+Comments take `--pf-comment`, `--pf-comment-soft`, `--pf-avatar` and
+`--pf-font`.

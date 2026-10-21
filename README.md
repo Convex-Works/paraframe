@@ -19,11 +19,20 @@ components, so anything inside them stays interactive.
 - **Comments.** Optional pinned threads on elements inside frames, through [visual-comments](https://github.com/Convex-Works/visual-comments).
 - **Theming.** `--pf-*` custom properties for the chrome.
 
-Requires SvelteKit 3, Svelte 5 and Tailwind 4 (the chrome is built with Tailwind).
+Requires SvelteKit 3 and Svelte 5. The chrome ships as plain CSS, so your app
+needs no Tailwind.
 
 ## Quickstart
 
-Add `paraframe` to your SvelteKit app, then define the prototype once:
+In a SvelteKit app (a new one from `npx sv create --template minimal --types ts`
+works), install paraframe and delete the template's root
+`src/routes/+page.svelte`: the canvas takes its place at `/`.
+
+```sh
+npm i -D paraframe
+```
+
+Define the prototype once:
 
 ```ts
 // src/lib/prototype.ts
@@ -49,20 +58,105 @@ export const prototype = definePrototype({
 });
 ```
 
-Then add three routes. The canvas and player share a layout that loads
+Each frame is an ordinary Svelte component:
+
+```svelte
+<!-- src/lib/frames/Welcome.svelte -->
+<main>
+	<h1>Welcome</h1>
+	<p>Your first frame.</p>
+</main>
+```
+
+Then add the routes. The canvas and player share a layout that loads
 paraframe's styles; the frame route loads your product's styles instead.
 
 ```
 src/routes/
-  +layout.ts                          export const prerender = true;
-  (viewer)/+layout.svelte             import 'paraframe/styles.css'
-  (viewer)/+page.svelte               <Canvas {prototype} />
-  (viewer)/play/[frame]/+page.svelte  <Player {prototype} frameId={page.params.frame ?? ''} />
-  frame/[frame]/+page.svelte          import your app's CSS; <FrameHost {prototype} resolved={data.resolved} />
+  +layout.ts
+  (viewer)/+layout.svelte
+  (viewer)/+page.svelte
+  (viewer)/play/[frame]/+page.ts
+  (viewer)/play/[frame]/+page.svelte
+  frame/[frame]/+page.ts
+  frame/[frame]/+page.svelte
 ```
 
-The play and frame routes also need `+page.ts` files; [Setup](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md)
-has the full routes, frame sizes and props, static previews and theming.
+```ts
+// src/routes/+layout.ts
+export const prerender = true;
+```
+
+```svelte
+<!-- src/routes/(viewer)/+layout.svelte -->
+<script lang="ts">
+	import 'paraframe/styles.css';
+	import type { LayoutProps } from './$types';
+
+	let { children }: LayoutProps = $props();
+</script>
+
+{@render children()}
+```
+
+```svelte
+<!-- src/routes/(viewer)/+page.svelte -->
+<script lang="ts">
+	import { Canvas } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+</script>
+
+<Canvas {prototype} />
+```
+
+```ts
+// src/routes/(viewer)/play/[frame]/+page.ts
+import { frameEntries } from 'paraframe';
+import { prototype } from '#lib/prototype.js';
+
+export const entries = () => frameEntries(prototype);
+```
+
+```svelte
+<!-- src/routes/(viewer)/play/[frame]/+page.svelte -->
+<script lang="ts">
+	import { page } from '$app/state';
+	import { Player } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+</script>
+
+<Player {prototype} frameId={page.params.frame ?? ''} />
+```
+
+```ts
+// src/routes/frame/[frame]/+page.ts
+import { frameEntries, resolveFrame } from 'paraframe';
+import { prototype } from '#lib/prototype.js';
+import type { PageLoad } from './$types';
+
+export const entries = () => frameEntries(prototype);
+
+export const load: PageLoad = async ({ params }) => ({
+	resolved: await resolveFrame(prototype, params.frame)
+});
+```
+
+```svelte
+<!-- src/routes/frame/[frame]/+page.svelte -->
+<script lang="ts">
+	// Import your product's own CSS here, never paraframe/styles.css.
+	import { FrameHost } from 'paraframe';
+	import { prototype } from '#lib/prototype.js';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+</script>
+
+<FrameHost {prototype} resolved={data.resolved} />
+```
+
+[Setup](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md) covers
+frame sizes and props, static previews and theming.
 
 To see a complete working prototype, clone this repository and run
 `pnpm install && pnpm showcase`.
