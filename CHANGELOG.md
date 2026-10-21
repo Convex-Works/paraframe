@@ -33,6 +33,9 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   frame or scale is a `menuitemradio` with `aria-checked`. Arrow keys and
   Home/End move between items, Escape or Tab closes the menu, and focus
   returns to the trigger.
+- The chrome's islands are frosted in Chromium browsers and Firefox, not only
+  in Safari. The compiled CSS kept only `-webkit-backdrop-filter` on
+  `.pf-island`.
 
 ## [0.1.0] - 2026-10-20
 
