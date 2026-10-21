@@ -95,7 +95,7 @@ clicks inside the frame (a selectable table row, say), add `data-pf-interactive`
 | View | Keys |
 | --- | --- |
 | Player | ← → previous and next frame, R restart the flow (while one is playing), C comment mode, Esc close the open comment, then leave comment mode |
-| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, F or ⇧2 center and fit the selection, ← → select previous and next frame, Enter play, C comment mode, Esc close the open comment, then leave comment mode |
+| Canvas | Scroll or drag to pan, ⌘/Ctrl + scroll to zoom, ⇧1 fit all, ⇧0 100%, F or ⇧2 center and fit the selection, ← → select previous and next frame, Enter play (when no button or link has focus), C comment mode, Esc close the open comment, then leave comment mode |
 
 On the canvas, hover live frames to inspect tooltips and hover states, and
 double-click a frame to play it.

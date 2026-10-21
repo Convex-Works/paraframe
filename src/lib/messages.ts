@@ -34,3 +34,13 @@ export function isEditable(target: EventTarget | null) {
 		(target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
 	);
 }
+
+// Controls that act on Enter themselves.
+const ACTIVATES_ON_ENTER =
+	'a[href],button,summary,[role=button],[role=link],[role=tab],[role=checkbox],[role=switch],' +
+	'[role=radio],[role=option],[role=menuitem],[role=menuitemradio],[role=menuitemcheckbox]';
+
+/** Whether Enter on this target belongs to a focused control rather than to a global shortcut. */
+export function activatesOnEnter(target: EventTarget | null) {
+	return target instanceof Element && target.closest(ACTIVATES_ON_ENTER) !== null;
+}
