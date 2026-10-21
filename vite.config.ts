@@ -15,6 +15,8 @@ export default defineConfig({
 			adapter: adapter()
 		})
 	],
+	// Component tests mount Svelte's client build, not the server one.
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
 	test: {
 		// Tests live outside src/lib so svelte-package never copies them into dist.
 		include: ['tests/**/*.test.ts']
