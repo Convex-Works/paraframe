@@ -15,20 +15,12 @@ jobs:
       image: ghcr.io/catthehacker/ubuntu:act-22.04@sha256:b40b8af93baee90b83f29c834440873300c8478809535786dbf79fa836c086ac
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: paraframe
-      # paraframe links ../visual-comments/packages/client (see deploy/Dockerfile).
-      - uses: actions/checkout@v4
-        with:
-          repository: convexworks/visual-comments
-          path: visual-comments
-          token: ${{ secrets.VISUAL_COMMENTS_TOKEN || github.token }}
       - name: Build image
         env:
           SHA: ${{ github.sha }}
         run: |
           set -eu
-          docker build --file paraframe/deploy/Dockerfile --tag "paraframe-showcase:${SHA}" .
+          docker build --file deploy/Dockerfile --tag "paraframe-showcase:${SHA}" .
       - name: Push image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

@@ -21,29 +21,21 @@ is prerendered, so `/play/<frame>` and `/frame/<frame>` are plain files.
 
 ## Build
 
-The image comes from `deploy/Dockerfile`. paraframe links
-`../visual-comments/packages/client`, so the build context is a directory with
-both checkouts side by side:
+The image comes from `deploy/Dockerfile`, built from this repository:
 
 ```sh
-mkdir showcase && cd showcase
-git clone git@ssh.git.convex.works:convexworks/paraframe.git
-git clone git@ssh.git.convex.works:convexworks/visual-comments.git
-docker build -f paraframe/deploy/Dockerfile -t paraframe-showcase .
+docker build -f deploy/Dockerfile -t paraframe-showcase .
 docker run --rm -p 8080:8080 paraframe-showcase   # http://localhost:8080/play/inbox
 ```
 
 `.forgejo/workflows/showcase.yml` does the same on every pull request and, on
 main, pushes `<REGISTRY_URL>/paraframe-showcase:<commit>` when the registry
-secrets are set. If the workflow's own token can't read visual-comments, add a
-`VISUAL_COMMENTS_TOKEN` secret with read access to it.
+secrets are set.
 
 Without Docker, the static site is `pnpm exec vite build` (output in `build/`)
-with `VITE_COMMENTS_SERVER` unset and visual-comments' client built
-(`pnpm --filter visual-comments build` in that checkout). `pnpm build` also runs
-`pnpm package`, which publint fails while the `link:` dependencies remain.
-`@convex-works/sign-in` is only loaded when `VITE_COMMENTS_SERVER` is set
-(`src/hooks.server.ts`), so the static build doesn't need `../sign-in`.
+with `VITE_COMMENTS_SERVER` unset. `@convex-works/sign-in` and
+`visual-comments/server` are only loaded when `VITE_COMMENTS_SERVER` is set
+(`src/hooks.server.ts`), so the static build doesn't need them.
 
 ## Run
 
