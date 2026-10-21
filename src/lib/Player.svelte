@@ -268,18 +268,20 @@
 				{/snippet}
 				{#snippet children(close)}
 					{#each prototype.sections as section (section.id)}
-						<p class="px-2 pt-2 pb-1 text-xs text-pf-muted">{section.title}</p>
-						{#each section.frames as item (item.id)}
-							<MenuItem
-								checked={item.id === frameId}
-								onselect={() => {
-									close();
-									show(item.id);
-								}}
-							>
-								{item.title}
-							</MenuItem>
-						{/each}
+						<div role="group" aria-label={section.title}>
+							<p class="px-2 pt-2 pb-1 text-xs text-pf-muted" aria-hidden="true">{section.title}</p>
+							{#each section.frames as item (item.id)}
+								<MenuItem
+									checked={item.id === frameId}
+									onselect={() => {
+										close();
+										show(item.id);
+									}}
+								>
+									{item.title}
+								</MenuItem>
+							{/each}
+						</div>
 					{/each}
 				{/snippet}
 			</Menu>

@@ -488,6 +488,8 @@
 							{entry.label}
 						</MenuItem>
 					{/each}
+				{/snippet}
+				{#snippet footer()}
 					<p class="max-w-60 border-t border-pf-line px-2 pt-2 pb-1 text-xs leading-relaxed text-pf-muted">
 						Scroll or drag to pan. Hold ⌘ or Ctrl and scroll to zoom. Double-click a frame to play it.
 					</p>

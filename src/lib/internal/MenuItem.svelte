@@ -10,7 +10,7 @@
 		tone = 'light'
 	}: {
 		onselect: () => void;
-		/** Shows a check mark column when not undefined. */
+		/** Makes this a radio item (`menuitemradio` with `aria-checked`) with a check mark column when not undefined. */
 		checked?: boolean;
 		children: Snippet;
 		hint?: string;
@@ -20,7 +20,9 @@
 
 <button
 	type="button"
-	role="menuitem"
+	role={checked === undefined ? 'menuitem' : 'menuitemradio'}
+	aria-checked={checked}
+	tabindex="-1"
 	onclick={onselect}
 	class={[
 		'flex w-full items-center gap-2 rounded-[2px] px-2 py-1.5 text-left',
@@ -29,7 +31,7 @@
 	]}
 >
 	{#if checked !== undefined}
-		<span class="w-4 shrink-0 text-pf-accent">
+		<span class="w-4 shrink-0 text-pf-accent" aria-hidden="true">
 			{#if checked}<Icon name="check" size={14} />{/if}
 		</span>
 	{/if}
