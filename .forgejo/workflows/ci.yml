@@ -1,0 +1,33 @@
+name: CI
+
+# Runs the gates AGENTS.md requires (check, test, package) plus the showcase
+# build on every pull request and on main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-22.04@sha256:b40b8af93baee90b83f29c834440873300c8478809535786dbf79fa836c086ac
+    steps:
+      - uses: actions/checkout@v4
+      # package.json engines: node >=22.17.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The pnpm version pinned in package.json's packageManager field.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Check
+        run: pnpm check
+      - name: Test
+        run: pnpm test
+      - name: Package
+        run: pnpm package
+      - name: Build
+        run: pnpm build
