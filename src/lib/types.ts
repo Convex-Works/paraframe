@@ -14,6 +14,8 @@ export interface FrameDefinition {
 	/** URL-safe identifier: lowercase letters, digits and single dashes. */
 	id: string;
 	title: string;
+	/** Where the screen lives in the product, e.g. `/{account}/projects`. Shown beside the title. */
+	path?: string;
 	/** Imports the frame's component, e.g. `() => import('./Overview.svelte')`. */
 	load: () => Promise<{ default: FrameComponent }>;
 	/** Props passed to the component, so one component can back several frames. */
@@ -65,6 +67,7 @@ export interface PrototypeDefinition {
 export interface Frame {
 	id: string;
 	title: string;
+	path: string | undefined;
 	load: FrameDefinition['load'];
 	props: Record<string, unknown>;
 	size: FrameSize;
