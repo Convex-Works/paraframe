@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
 # The showcase at paraframe.convex.works: the prerendered site (build/) behind
-# nginx, with comments off. The build context is this repository:
+# nginx. Its comments stay in each visitor's browser (src/service-worker). The
+# build context is this repository:
 #   docker build -t paraframe-showcase .
 # @convex-works/sign-in and visual-comments/server are only loaded when
 # VITE_COMMENTS_SERVER is set (src/hooks.server.ts), so the static build

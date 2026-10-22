@@ -87,9 +87,20 @@ visual-comments' own markup reference is in its docs at
 Comments take `--pf-comment`, `--pf-comment-soft`, `--pf-avatar` and
 `--pf-font`. See [Setup › Theming](SETUP.md#theming).
 
-## Running the showcase with comments
+## The showcase's comments
 
-Run the showcase with comments against a local server, with the development
+The published showcase has no server, so its comments come from a stand-in:
+the service worker in [`src/service-worker`](../src/service-worker) answers
+visual-comments' requests and sign-in under `/_demo` and keeps the threads and
+images in the browser's Cache Storage. Each visitor is signed in as "You" and
+sees only the comments made in that browser; they survive reloads, and
+clearing the site's data removes them. In a browser that cannot run the
+service worker, the showcase has no comments. `pnpm showcase` runs the same
+way.
+
+## Running the showcase with comments from a server
+
+Run the showcase against a local visual-comments server, with the development
 sign-in:
 
 ```sh
@@ -98,7 +109,8 @@ VITE_COMMENTS_SERVER=http://localhost:4400 pnpm showcase
 ```
 
 The showcase's [`src/hooks.server.ts`](../src/hooks.server.ts) adds the sign-in
-and the comments proxy only when `VITE_COMMENTS_SERVER` is set. The sign-in
+and the comments proxy only when `VITE_COMMENTS_SERVER` is set, and the
+service worker is not used. The sign-in
 comes from the private `@convex-works/sign-in` package, linked from
 `../sign-in`: check out the
 [sign-in repository](https://git.convex.works/ConvexWorks/sign-in) next to

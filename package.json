@@ -37,7 +37,7 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"prepack": "pnpm package",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --tsgo",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --tsgo && tsc -p src/service-worker",
 		"test": "vitest run"
 	},
 	"files": [

@@ -11,8 +11,9 @@ pnpm package    # build dist/ (with the compiled dist/styles.css) and lint the p
 pnpm css        # compile only src/styles.css into dist/styles.css
 ```
 
-To run the showcase with comments, see
-[Comments › Running the showcase with comments](COMMENTS.md#running-the-showcase-with-comments).
+The showcase's comments stay in the browser; to run it against a comment
+server, see
+[Comments › Running the showcase with comments from a server](COMMENTS.md#running-the-showcase-with-comments-from-a-server).
 The published showcase at paraframe.convex.works is built and served as
 described in [DEPLOY.md](DEPLOY.md).
 
@@ -31,7 +32,9 @@ described in [DEPLOY.md](DEPLOY.md).
 - [`src/routes`](../src/routes) and [`src/demo`](../src/demo) in this package
   are a complete working example, served by `pnpm showcase`. `src/demo` holds
   the demo prototype, its frames and their CSS; `src/routes` wires them up as
-  described in [Setup](SETUP.md#routes).
+  described in [Setup](SETUP.md#routes). [`src/service-worker`](../src/service-worker)
+  stands in for a comment server in the showcase
+  ([Comments](COMMENTS.md#the-showcases-comments)).
 - [`tests`](../tests) holds the Vitest unit tests. They sit outside `src/lib`
   so `svelte-package` never copies them into `dist/`.
 - [`Dockerfile`](../Dockerfile) and [`nginx.conf`](../nginx.conf) build the

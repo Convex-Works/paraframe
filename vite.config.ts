@@ -12,7 +12,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter(),
+			// The showcase registers its service worker itself, before comments start (src/demo/comments.ts).
+			serviceWorker: { register: false }
 		})
 	],
 	// Component tests mount Svelte's client build, not the server one.

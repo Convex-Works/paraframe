@@ -1,9 +1,13 @@
 # Deploying the showcase
 
 The showcase (`src/routes` + `src/demo`) is published at
-<https://paraframe.convex.works>. It is the adapter-static build with comments
-off, served by unprivileged nginx. Every frame is prerendered, so
-`/play/<frame>` and `/frame/<frame>` are plain files.
+<https://paraframe.convex.works>. It is the adapter-static build, served by
+unprivileged nginx. Every frame is prerendered, so `/play/<frame>` and
+`/frame/<frame>` are plain files.
+
+There is no comment server behind it. Comments still work: a service worker
+in the visitor's browser stands in for the server and keeps their comments
+there; see [Comments › The showcase's comments](COMMENTS.md#the-showcases-comments).
 
 ## Build
 

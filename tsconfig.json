@@ -3,5 +3,7 @@
 	"compilerOptions": {
 		"strict": true
 	},
-	"include": ["src", "tests", "vite.config.ts"]
+	"include": ["src", "tests", "vite.config.ts"],
+	// The service worker has its own tsconfig, with the worker's globals.
+	"exclude": ["src/service-worker"]
 }
