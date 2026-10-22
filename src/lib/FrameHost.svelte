@@ -6,7 +6,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { isEditable, PLAYER_KEYS, postToHost } from './messages.js';
+	import { isEditable, keyTarget, PLAYER_KEYS, postToHost } from './messages.js';
 	import { setFrameNav, type FrameNav } from './nav.js';
 	import type { Prototype, ResolvedFrame } from './types.js';
 
@@ -85,7 +85,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (mode !== 'player' || !PLAYER_KEYS.has(event.key)) return;
-		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target)) return;
+		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(keyTarget(event))) return;
 		event.preventDefault();
 		postToHost({ type: 'paraframe:key', key: event.key });
 	}

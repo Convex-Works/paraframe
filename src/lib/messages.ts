@@ -28,6 +28,15 @@ export function postToHost(message: FrameMessage) {
  */
 export const PLAYER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'r', 'R']);
 
+/**
+ * The element a key was pressed in. A window listener sees a key typed inside a
+ * shadow root, such as visual-comments' composer, as coming from the root's
+ * host, so ask the event's path for the element itself.
+ */
+export function keyTarget(event: Event): EventTarget | null {
+	return event.composedPath()[0] ?? event.target;
+}
+
 export function isEditable(target: EventTarget | null) {
 	return (
 		target instanceof HTMLElement &&

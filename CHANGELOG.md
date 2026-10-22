@@ -6,6 +6,14 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Typing a comment no longer triggers the canvas and player shortcuts. Keys
+  typed in visual-comments' composer, which sits in a shadow root, reached
+  them as if typed on the page and never reached the comment: in the player
+  R restarted the flow and the arrows changed frames, and on the canvas F,
+  = and - moved the view.
+
 ## [0.2.0] - 2026-10-21
 
 ### Added
