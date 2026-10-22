@@ -15,7 +15,7 @@
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
-	import { activatesOnEnter, isEditable } from './messages.js';
+	import { activatesOnEnter, isEditable, keyTarget } from './messages.js';
 	import { describeFrame, useCommentsHolder, type CommentThreadPin } from './internal/comments.js';
 	import type { Flow, Frame, Prototype, Section } from './types.js';
 
@@ -369,10 +369,11 @@
 	}
 
 	function onkeydown(event: KeyboardEvent) {
-		if (isEditable(event.target) || document.querySelector(':popover-open')) return;
+		const target = keyTarget(event);
+		if (isEditable(target) || document.querySelector(':popover-open')) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		// A focused button or link handles Enter itself; Enter elsewhere plays the selection.
-		if (event.code === 'Enter' && activatesOnEnter(event.target)) return;
+		if (event.code === 'Enter' && activatesOnEnter(target)) return;
 		const actions: Record<string, () => void> = {
 			'shift+Digit1': () => fit(layout.bounds),
 			'shift+Digit0': () => zoomTo(1),

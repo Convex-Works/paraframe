@@ -10,7 +10,7 @@
 	import Menu from './internal/Menu.svelte';
 	import MenuItem from './internal/MenuItem.svelte';
 	import { readStored, storageKey, writeStored } from './internal/storage.js';
-	import { isEditable, isFrameMessage, PLAYER_KEYS } from './messages.js';
+	import { isEditable, isFrameMessage, keyTarget, PLAYER_KEYS } from './messages.js';
 	import { describeFrame, useCommentsHolder, type CommentThreadPin } from './internal/comments.js';
 	import type { Flow, Prototype } from './types.js';
 
@@ -130,7 +130,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (!PLAYER_KEYS.has(event.key)) return;
-		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(event.target)) return;
+		if (event.metaKey || event.ctrlKey || event.altKey || isEditable(keyTarget(event))) return;
 		if (document.querySelector(':popover-open')) return;
 		event.preventDefault();
 		handleKey(event.key);
