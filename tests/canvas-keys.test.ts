@@ -25,7 +25,7 @@ describe('Enter on the canvas', () => {
 
 	it.each([
 		['the body', () => document.body],
-		['the canvas', () => element('<div role="application" tabindex="0">Canvas</div>')],
+		['the canvas', () => element('<div role="region" aria-label="Canvas of all frames">Canvas</div>')],
 		['a plain element', () => element('<p>Text</p>')],
 		['an anchor without href', () => element('<a>Placeholder</a>')],
 		['the window', () => window],

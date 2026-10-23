@@ -13,6 +13,18 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bookmarks name the page, and SvelteKit's route announcer reads the
   frame's title on each frame change instead of "untitled page". This overrides a `<title>`
   an app sets in its viewer layout, because the component's is deeper.
+- `Canvas` tells screen readers which frame is selected. A visually hidden
+  status region says "Frame, Section. Enter to play." when ← → or a click
+  change the selection, the selected frame's label button has
+  `aria-pressed="true"`, and the Play button is named "Play from Frame"
+  while a frame is selected.
+
+### Changed
+
+- `Canvas`: the board is a labelled `role="region"` instead of
+  `role="application"`. It never took focus itself and its keys are handled
+  on the window, so the role only risked taking screen readers out of
+  browse mode.
 
 ### Fixed
 
