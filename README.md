@@ -226,6 +226,16 @@ from `paraframe/comments`, and viewers can press **C** to pin threads on
 elements inside frames. Without it, paraframe needs nothing from
 visual-comments. See [Comments](https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md).
 
+## How it compares
+
+[Storybook](https://storybook.js.org) and [Histoire](https://histoire.dev)
+are built around stories: each renders a component (or, in Storybook, a
+page) in isolation in one state, with controls to vary its props. paraframe
+shows *screens*: whole pages of your product laid out side by side like a
+design file and linked into flows you can click through, so you can review a
+prototype end to end or send it to someone who doesn't read code. Use both if
+you like; a story is a component in one state, a frame is a screen.
+
 ## License
 
 [MIT](https://github.com/Convex-Works/paraframe/blob/main/LICENSE)
