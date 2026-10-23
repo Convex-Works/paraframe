@@ -160,6 +160,8 @@ export const load: PageLoad = async ({ params }) => ({
 
 [Setup](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md) covers
 frame sizes and props, static previews and theming.
+To send someone a link, [Share it](https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md#share-it)
+builds the prototype as a static site and deploys it to GitHub Pages.
 
 To see a complete working prototype, clone this repository and run
 `pnpm install && pnpm showcase`.

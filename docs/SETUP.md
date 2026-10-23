@@ -222,3 +222,81 @@ Override the `--pf-*` custom properties (see
 
 Comments take `--pf-comment`, `--pf-comment-soft`, `--pf-avatar` and
 `--pf-font`.
+
+## Share it
+
+A prototype is easiest to share as a static site: every frame is prerendered
+(`prerender = true` in `src/routes/+layout.ts`), so any static host can serve
+it and you send a link.
+
+Switch to the static adapter:
+
+```sh
+npm i -D @sveltejs/adapter-static
+```
+
+```ts
+// vite.config.ts
+import adapter from '@sveltejs/adapter-static';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	plugins: [
+		sveltekit({
+			adapter: adapter(),
+			// Only for a site served from a sub-path, such as a GitHub Pages project site.
+			paths: { base: '/my-prototype' }
+		})
+	]
+});
+```
+
+Keep any other options the template put in `sveltekit({ ... })`. `npm run build`
+writes the site to `build/`. Leave out `paths` if the site is served from the
+root of its domain. With a base path, every route lives under it, in
+development too (`/my-prototype/`, `/my-prototype/play/<frame>`), and the
+`resolve` calls in your prototype's `paths` already include it.
+
+The host must serve `frame/welcome.html` for `/frame/welcome`, because the canvas
+and player load frames by URLs without `.html`. GitHub Pages, Netlify and
+Cloudflare Pages do this; `python -m http.server` doesn't, so frames come up
+as 404s there. `npx serve build` does, to check a build without a base path
+locally.
+
+### GitHub Pages
+
+A project site is served at `https://<owner>.github.io/<repo>/`, so set
+`paths: { base: '/<repo>' }`. Then set the repository's Settings › Pages ›
+Source to "GitHub Actions" and add this workflow:
+
+```yaml
+# .github/workflows/pages.yml
+name: Pages
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: build
+      - id: deployment
+        uses: actions/deploy-pages@v5
+```

@@ -38,7 +38,7 @@ Rules that bite:
 Further reading:
 
 - [README.md](README.md) — overview, quickstart, linking frames, keys.
-- [docs/SETUP.md](docs/SETUP.md) — full prototype definition, routes, static canvas previews, theming.
+- [docs/SETUP.md](docs/SETUP.md) — full prototype definition, routes, static canvas previews, theming, sharing as a static site.
 - [docs/COMMENTS.md](docs/COMMENTS.md) — comments integration, `Comments` props, markup contract, showcase with comments.
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — scripts, repository layout, the no-product-code rule, brand assets and how the banner is rendered.
 - [docs/DEPLOY.md](docs/DEPLOY.md) — how the showcase is built and served at paraframe.convex.works.
