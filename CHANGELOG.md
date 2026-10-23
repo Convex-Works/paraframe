@@ -6,8 +6,19 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `Canvas` and `Player` set the page title: the prototype's title on the
+  canvas, and "Frame – Prototype" in the player. Tabs, history and
+  bookmarks name the page, and SvelteKit's route announcer reads the
+  frame's title on each frame change instead of "untitled page". This overrides a `<title>`
+  an app sets in its viewer layout, because the component's is deeper.
+
 ### Fixed
 
+- `Player`: when the frame that has keyboard focus is replaced, for example
+  after activating a `FrameLink` from the keyboard, focus moves to the new
+  frame instead of falling back to the page, so Tab carries on inside it.
 - Typing a comment no longer triggers the canvas and player shortcuts. Keys
   typed in visual-comments' composer, which sits in a shadow root, reached
   them as if typed on the page and never reached the comment: in the player

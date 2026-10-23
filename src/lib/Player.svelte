@@ -76,7 +76,11 @@
 		const index = slots.findIndex((s) => s.key === key);
 		if (index === -1) return;
 		slots[index].ready = true;
-		if (index > 0) slots = slots.slice(index);
+		if (index === 0) return;
+		// Keep keyboard focus: if a frame being dropped has it, hand it to the one now shown.
+		const focused = slots.slice(0, index).some((s) => iframes.get(s.key) === document.activeElement);
+		slots = slots.slice(index);
+		if (focused) iframes.get(key)?.focus();
 	}
 
 	$effect(() => {
@@ -161,6 +165,10 @@
 		setTimeout(() => markReady(key), 1500);
 	}
 </script>
+
+<svelte:head>
+	<title>{frame ? `${frame.title} – ${prototype.title}` : prototype.title}</title>
+</svelte:head>
 
 <svelte:window {onkeydown} {onmessage} />
 

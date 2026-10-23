@@ -437,6 +437,10 @@
 	const selectedFrame = $derived(selected ? prototype.get(selected) : undefined);
 </script>
 
+<svelte:head>
+	<title>{prototype.title}</title>
+</svelte:head>
+
 <svelte:window {onkeydown} />
 
 <div class="pf-root relative flex h-dvh flex-col bg-pf-canvas font-pf text-[13px] text-pf-canvas-ink">
