@@ -235,9 +235,14 @@
 		}, 150);
 	}
 
+	// What the status region says when the selection changes, for screen readers.
+	let announcement = $state('');
+
 	function select(id: string | undefined) {
 		selected = id;
 		persist();
+		const frame = id ? prototype.get(id) : undefined;
+		announcement = frame ? `${frame.title}, ${frame.section.title}. Enter to play.` : '';
 	}
 
 	function play(id: string | undefined, flow?: Flow) {
@@ -524,6 +529,7 @@
 				class="pf-tool pf-tool-primary"
 				onclick={() => play(selected)}
 				title={selectedFrame ? `Play from “${selectedFrame.title}”` : 'Play from the first frame'}
+				aria-label={selectedFrame ? `Play from ${selectedFrame.title}` : undefined}
 			>
 				<Icon name="play" size={14} />
 				Play
@@ -531,6 +537,8 @@
 			{#if comments}<span data-vc-account></span>{/if}
 		</nav>
 	</header>
+
+	<p role="status" class="sr-only">{announcement}</p>
 
 	<div
 		bind:this={viewport}
@@ -544,7 +552,7 @@
 		onpointerleave={() => (hovered = undefined)}
 		{ondblclick}
 		data-vc-gestures="host"
-		role="application"
+		role="region"
 		aria-label="Canvas of all frames"
 		class={[
 			'relative min-h-0 flex-1 touch-none overflow-hidden select-none',
@@ -640,6 +648,7 @@
 									'min-w-0 truncate rounded px-1 text-xs',
 									frame.id === selected ? 'text-pf-selection' : 'text-pf-canvas-muted hover:text-pf-canvas-ink'
 								]}
+								aria-pressed={frame.id === selected}
 								onclick={() => select(frame.id)}
 								ondblclick={() => play(frame.id)}
 							>
