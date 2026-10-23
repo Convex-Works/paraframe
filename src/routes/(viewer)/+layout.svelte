@@ -14,7 +14,7 @@
 		'Real Svelte 5 components as frames on a zoomable canvas and in a flow player, like a design file you can click through.';
 </script>
 
-<!-- The default title and the link previews for the canvas and the player. -->
+<!-- Link previews for the canvas and the player. Canvas and Player set their own <title>, which wins over this one. -->
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
