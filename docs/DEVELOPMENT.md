@@ -57,3 +57,9 @@ The README banner, `docs/assets/paraframe-banner.png`, is rendered from
 headless Chromium at a 1280×840 viewport with device scale factor 2 and
 screenshot the `#banner` element. The frame images it uses are in
 `docs/assets/brand/banner/`.
+
+The link-preview cards are cropped from the same source by
+[`render-cards.sh`](assets/brand/render-cards.sh) (needs Chromium):
+`static/og.png` (1200×630) is the showcase's `og:image`, and
+`docs/assets/paraframe-social.png` (1280×640) is the repository's social
+preview on GitHub, uploaded by hand under Settings › Social preview.
