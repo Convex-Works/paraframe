@@ -2,9 +2,9 @@
 
 <p align="center">
   <a href="https://paraframe.convex.works">Showcase</a> ·
-  <a href="docs/SETUP.md">Setup</a> ·
-  <a href="docs/COMMENTS.md">Comments</a> ·
-  <a href="docs/DEVELOPMENT.md">Development</a>
+  <a href="https://github.com/Convex-Works/paraframe/blob/main/docs/SETUP.md">Setup</a> ·
+  <a href="https://github.com/Convex-Works/paraframe/blob/main/docs/COMMENTS.md">Comments</a> ·
+  <a href="https://github.com/Convex-Works/paraframe/blob/main/docs/DEVELOPMENT.md">Development</a>
 </p>
 
 paraframe is a read-only viewer for UI frames, in the style of a design tool's
